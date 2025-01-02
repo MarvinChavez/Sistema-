@@ -13,6 +13,7 @@ class Ingreso extends Model
     public $timestamps = false;
     public function auto() {
         return $this->belongsTo(Auto::class);
+        
     }
     public function ruta() {
         return $this->belongsTo(Ruta::class);
