@@ -19,11 +19,11 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}" id="btn-pie">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Filtros de Ingresos por Auto</h4>
+                <h4 class="card-title text-center mb-4">Filtros de Ingresos por Placa</h4>
                 <form id="filtros-auto-form" class="row g-3">
                     <!-- Selector de Autos Múltiples -->
                     <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
-                        <label class="form-label">Auto:</label>
+                        <label class="form-label">Placa:</label>
                         <div id="autos">
                             @foreach($autos as $auto)
                             <div class="form-check">
@@ -57,7 +57,7 @@
                 </form>
             </div>
             <div class="col-md-12 text-center mt-3">
-                <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
+                <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -172,10 +172,6 @@
     document.getElementById('graficoAuto').style.height = "600px"; // Reducir el gráfico al tamaño original
 
     // Limpiar los campos de filtros
-    document.querySelectorAll('input[name="autos[]"]').forEach(checkbox => checkbox.checked = false);
-    document.getElementById('fecha_inicio').value = '';
-    document.getElementById('fecha_fin').value = '';
-
     // Limpiar el gráfico y los montos promedio
     graficoAuto.data.labels = [];
     graficoAuto.data.datasets = [];
@@ -274,7 +270,7 @@
             });
 
             return {
-                label: auto.nombre,
+                label: `${auto.nombre} (${auto.numero_turnos} turnos)`, // Mostrar el nombre y número de turnos
                 data: montos,
                 borderColor: getRandomColor(index),
                 tension: 0.2,

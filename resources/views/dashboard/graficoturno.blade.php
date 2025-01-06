@@ -84,7 +84,7 @@
                 </form>
             </div>
                 <div class="col-md-12 text-center mt-3">
-                    <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
+                    <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
                 </div>
                 <!-- Contenedor para el gráfico de líneas -->
                 <div class="card shadow-sm mt-4">
@@ -154,46 +154,59 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 <script>
     document.getElementById('rutaSelect').addEventListener('change', function() {
-        const rutaId = this.value;
-        const turnoContainer = document.getElementById('turnoCheckboxContainer');
-        
-        if (rutaId) {
-            fetch(`/turnos/${rutaId}`)
-                .then(response => response.json())
-                .then(turnos => {
-                    turnoContainer.innerHTML = ''; // Limpiar opciones anteriores
-                    turnos.forEach(turno => {
-                        // Crear un contenedor de checkbox
-                        const checkboxWrapper = document.createElement('div');
-                        checkboxWrapper.classList.add('form-check');
+    const rutaId = this.value;
+    const turnoContainer = document.getElementById('turnoCheckboxContainer');
+    const servicioSelect = document.getElementById('servicio'); // Obtener el elemento select del tipo de servicio
+    const tipoServicio = servicioSelect.value; // Obtener el valor seleccionado
 
-                        // Crear el checkbox
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.name = 'turnoCheckboxContainer[]';  // Add this line
-                        checkbox.value = turno.id;
-                        checkbox.id = `turno-${turno.id}`;
-                        checkbox.classList.add('form-check-input');
+    if (rutaId && tipoServicio) { // Verificar que ambos valores están presentes
+        fetch(`/turnos/${rutaId}?servicio=${tipoServicio}`) // Pasar el tipo de servicio como parámetro
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener los turnos: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(turnos => {
+                turnoContainer.innerHTML = ''; // Limpiar opciones anteriores
+                turnos.forEach(turno => {
+                    // Crear un contenedor de checkbox
+                    const checkboxWrapper = document.createElement('div');
+                    checkboxWrapper.classList.add('form-check');
 
-                        // Crear la etiqueta para el checkbox
-                        const label = document.createElement('label');
-                        label.htmlFor = `turno-${turno.id}`;
-                        label.classList.add('form-check-label');
-                        label.textContent = turno.hora;
+                    // Crear el checkbox
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'turnoCheckboxContainer[]';
+                    checkbox.value = turno.id;
+                    checkbox.id = `turno-${turno.id}`;
+                    checkbox.classList.add('form-check-input');
 
-                        // Agregar el checkbox y la etiqueta al contenedor
-                        checkboxWrapper.appendChild(checkbox);
-                        checkboxWrapper.appendChild(label);
+                    // Crear la etiqueta para el checkbox
+                    const label = document.createElement('label');
+                    label.htmlFor = `turno-${turno.id}`;
+                    label.classList.add('form-check-label');
+                    label.textContent = turno.hora;
 
-                        // Agregar el contenedor de checkbox al contenedor principal
-                        turnoContainer.appendChild(checkboxWrapper);
-                    });
-                })
-                .catch(error => console.error('Error al obtener turnos:', error));
-        } else {
-            turnoContainer.innerHTML = ''; // Limpiar si no hay ruta
-        }
-    });
+                    // Agregar el checkbox y la etiqueta al contenedor
+                    checkboxWrapper.appendChild(checkbox);
+                    checkboxWrapper.appendChild(label);
+
+                    // Agregar el contenedor de checkbox al contenedor principal
+                    turnoContainer.appendChild(checkboxWrapper);
+                });
+            })
+            .catch(error => console.error('Error al obtener turnos:', error));
+    } else {
+        turnoContainer.innerHTML = ''; // Limpiar si no hay ruta o tipo de servicio
+    }
+});
+
+// Escuchar cambios en el select de tipo servicio
+document.getElementById('servicio').addEventListener('change', function() {
+    document.getElementById('rutaSelect').dispatchEvent(new Event('change')); // Simular cambio en la ruta para actualizar los turnos
+});
+
 
     const ctxTurno = document.getElementById('graficoTurno').getContext('2d');
     const graficoTurno = new Chart(ctxTurno, {
@@ -231,12 +244,6 @@
     document.querySelector('button[type="submit"]').classList.remove('d-none');
     document.getElementById('graficoTurno').style.height = "600px"; // Reducir el gráfico al tamaño original
 
-    // Limpiar los campos de filtros
-    
-    document.querySelectorAll('input[name="turnoCheckboxContainer[]"]').forEach(checkbox => checkbox.checked = false);
-    document.getElementById('fechaInicio').value = '';
-    document.getElementById('fechaFin').value = '';
-
     // Limpiar el gráfico y los montos promedio
     graficoTurno.data.labels = [];
     graficoTurno.data.datasets = [];
@@ -263,7 +270,7 @@
         fetchTurnoData(autosSeleccionados, fecha_inicio, fecha_fin);
     });
     document.getElementById('btn-semana').addEventListener('click', function () {
-        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
+        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="turnoCheckboxContainer[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = new Date();
         fecha_inicio.setDate(fecha_inicio.getDate() - 7);
         let fecha_fin = new Date();
@@ -273,7 +280,7 @@
     });
 
     document.getElementById('btn-mes').addEventListener('click', function () {
-    let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
+        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="turnoCheckboxContainer[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_fin = new Date();
     fecha_fin.setHours(23, 59, 59);
 
@@ -285,7 +292,7 @@
 });
 
     document.getElementById('btn-año').addEventListener('click', function () {
-        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
+        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="turnoCheckboxContainer[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = new Date();
         fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1);
         let fecha_fin = new Date();

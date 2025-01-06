@@ -36,9 +36,9 @@
                 <!-- Selección de auto -->
                 <div class="row mb-4">
                     <div class="col-md-12">
-                        <h5>Selecciona Auto:</h5>
+                        <h5>Selecciona Placa:</h5>
                         <select id="autoSelect" class="form-select">
-                            <option value="" disabled selected>Selecciona un auto</option>
+                            <option value="" disabled selected>Selecciona una placa</option>
                             @foreach ($autos as $auto)
                                 <option value="{{ $auto->id }}">{{ $auto->placa }}</option>
                             @endforeach
@@ -159,10 +159,11 @@ google.charts.setOnLoadCallback(function() {
         // Formateamos los datos para que Google Charts los entienda
         const chartData = [['Ruta', 'Monto']]; // Datos para Google Charts
 
-        // Asegúrate de que labels y data tienen los datos correctos
         data.labels.forEach((label, index) => {
-            chartData.push([label, parseFloat(data.data[index])]); // Convertir a float
-        });
+        const turnos = data.numeroTurnos[index]; // Obtener número de turnos
+        const monto = parseFloat(data.data[index]); // Convertir monto a número
+        chartData.push([`${label} (Turnos: ${turnos})`, monto]); // Formatear etiqueta
+    });
 
         drawChart(chartData); // Llama la función para dibujar el gráfico
     })
@@ -170,39 +171,51 @@ google.charts.setOnLoadCallback(function() {
 }
 function drawChart(chartData) {
     var data = google.visualization.arrayToDataTable(chartData);
+    
+    // Formateador para agregar el prefijo "S/." y redondear los valores a enteros
+    var formatter = new google.visualization.NumberFormat({
+        prefix: 'S/.',
+        fractionDigits: 0  // Esto asegura que no haya decimales, redondeando los valores a enteros
+    });
+
+    // Aplicar el formateador a la columna de valores (columna 1)
+    formatter.format(data, 1); 
     var options = {
-    title: 'Monto por Ruta',
-    is3D: true,
-    pieSliceText: 'value', // Muestra el valor en la región
-    tooltip: {
-        text: 'percentage' // Muestra el porcentaje al pasar el cursor
-    },
-    slices: {
-        0: { offset: 0.1 },
-        1: { offset: 0.1 },
-        2: { offset: 0.1 }
-    },
-    pieSliceTextStyle: {
-        color: 'black',
-        fontSize: 10 // Asegura que el texto sea pequeño para regiones pequeñas
-    },
-    legend: {
-        position: 'labeled', // Las etiquetas se colocan al lado del gráfico
-        textStyle: {
-            fontSize: 12 // Tamaño de texto ajustable
-        }
-    },
-    chartArea: {
-        width: '90%', // Maximiza el espacio del gráfico
-        height: '90%'
-    }
-};
+        title: 'Monto por Ruta',
+        is3D: true,
+        pieSliceText: 'value', // Muestra el valor en la región
+        tooltip: {
+            text: 'percentage' // Muestra el porcentaje al pasar el cursor
+        },
+        slices: {
+            0: { offset: 0.1 },
+            1: { offset: 0.1 },
+            2: { offset: 0.1 }
+        },
+        pieSliceTextStyle: {
+            color: 'black',
+            fontSize: 10 // Tamaño de texto ajustable, lo suficientemente pequeño para no ocupar mucho espacio
+        },
+        legend: {
+            position: 'labeled', // Las etiquetas se colocan al lado del gráfico
+            textStyle: {
+                fontSize: 12 // Tamaño de texto ajustable
+            }
+        },
+        chartArea: {
+            width: '90%', // Maximiza el espacio del gráfico
+            height: '90%'
+        },
+        // Asegura que todos los segmentos sean visibles
+        sliceVisibilityThreshold: 0, // No ocultar ningún segmento, incluso los pequeños
+    };
 
 
+    // Dibujar el gráfico
     var chart = new google.visualization.PieChart(document.getElementById('graficoPie'));
     chart.draw(data, options);
 
-    // Asegura que se redibuja correctamente
+    // Redibujar cuando esté listo
     google.visualization.events.addListener(chart, 'ready', function () {
         chart.draw(data, options);
     });

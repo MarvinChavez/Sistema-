@@ -74,7 +74,7 @@
                 
             </div>
             <div class="col-md-12 text-center mt-3">
-                <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
+                <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -223,9 +223,9 @@ const graficoRuta = new Chart(ctx, {
                 y: {
                     beginAtZero: true, // Comenzar desde 0
                     min: 0, // Monto mínimo
-                    max: 10000, // Monto máximo
+                    max: 30000, // Monto máximo
                     ticks: {
-                        stepSize: 2000 // Incremento entre ticks del eje Y
+                        stepSize: 5000 // Incremento entre ticks del eje Y
                     }
                 }
             }
@@ -307,11 +307,6 @@ document.getElementById('btn-limpiar').addEventListener('click', function () {
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
     document.getElementById('graficoRuta').style.height = "600px"; // Reducir el gráfico al tamaño original
-
-    // Limpiar los campos de filtros
-    document.querySelectorAll('input[name="rutas[]"]').forEach(checkbox => checkbox.checked = false);
-    document.getElementById('fecha_inicio').value = '';
-    document.getElementById('fecha_fin').value = '';
 
     // Limpiar el gráfico y los montos promedio
     graficoRuta.data.labels = [];

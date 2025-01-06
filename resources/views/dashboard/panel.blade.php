@@ -162,7 +162,10 @@
     .then(data => {
         // Ordenar los ingresos por fecha
         let datosOrdenados = data.ingresos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-        let fechas = datosOrdenados.map(item => item.fecha);
+        let fechas = datosOrdenados.map(item => {
+        let fecha = new Date(item.fecha);
+        return fecha.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+        });
         let montos = datosOrdenados.map(item => item.total);
 
         // Actualizar los datos del gráfico
@@ -171,7 +174,7 @@
         graficoIngresos.update();
 
         // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toFixed(2);
+        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     });
 }
 

@@ -18,7 +18,7 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}" id="btn-pie">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Gráfico de Ingresos por Autos</h4>
+                <h4 class="card-title text-center mb-4">Gráfico de Ingresos por Placa</h4>
                 
                 <!-- Selección de rango de fechas -->
                 <div class="row justify-content-center mb-4">
@@ -42,7 +42,7 @@
                     </div>
     
                     <div class="col-md-4">
-                        <h5>Selecciona Autos:</h5>
+                        <h5>Selecciona placa:</h5>
                         <div id="autos-list" class="list-group" style="max-height: 200px; overflow-y: auto;">
                             @foreach($autos as $auto)
                                 <label class="list-group-item">

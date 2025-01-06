@@ -183,107 +183,125 @@ class IngresoController extends Controller
         return view('dashboard.grafico-auto', compact('autos'));
     }
     public function filtrarAuto(Request $request)
-{
-    try {
-        // Validar los datos recibidos
-        $request->validate([
-            'autos' => 'required|array',            // Los autos seleccionados deben ser un array
-            'servicio' => 'nullable|string',        // El servicio debe ser un string, puede ser nulo
-            'fecha_inicio' => 'nullable|date',      // Fecha de inicio válida, puede ser nula
-            'fecha_fin' => 'nullable|date',         // Fecha de fin válida, puede ser nula
-        ]);
-    
-        // Obtener los parámetros de la solicitud
-        $autoIds = $request->input('autos');
-        $servicio = $request->input('servicio');
-        $fechaInicio = $request->input('fecha_inicio');
-        $fechaFin = $request->input('fecha_fin');
-    
-        // Consultar los ingresos de autos filtrados por los parámetros recibidos
-        $query = DB::table('ingreso')
-            ->select(
-                'ingreso.auto_id',
-                'auto.placa',
-                DB::raw('SUM(ingreso.monto) as total_monto'),
-                DB::raw('DATE(ingreso.fecha) as fecha')
-            )
-            ->join('auto', 'ingreso.auto_id', '=', 'auto.id')
-            ->whereIn('ingreso.auto_id', $autoIds)  // Filtrar por los autos seleccionados
-            ->when($servicio, function ($query) use ($servicio) {
-                return $query->where('ingreso.servicio', $servicio);  // Filtrar por servicio si se proporcionó
-            })
-            ->when($fechaInicio && $fechaFin, function ($query) use ($fechaInicio, $fechaFin) {
-                return $query->whereBetween('ingreso.fecha', [$fechaInicio, $fechaFin]);  // Filtrar por rango de fechas
-            })
-            ->when($fechaInicio, function ($query) use ($fechaInicio) {
-                return $query->where('ingreso.fecha', '>=', $fechaInicio);  // Filtrar por fecha de inicio si se proporcionó
-            })
-            ->when($fechaFin, function ($query) use ($fechaFin) {
-                return $query->where('ingreso.fecha', '<=', $fechaFin);  // Filtrar por fecha de fin si se proporcionó
-            })
-            ->groupBy('ingreso.auto_id', 'auto.placa', 'fecha') // Agrupar por auto y fecha
-            ->orderBy('fecha')  // Ordenar por fecha
-            ->get();
-    
-        // Si no hay resultados, devolver una respuesta vacía
-        if ($query->isEmpty()) {
-            return response()->json([
-                'autos' => []
+    {
+        try {
+            // Validar los datos recibidos
+            $request->validate([
+                'autos' => 'required|array',            // Los autos seleccionados deben ser un array
+                'servicio' => 'nullable|string',        // El servicio debe ser un string, puede ser nulo
+                'fecha_inicio' => 'nullable|date',      // Fecha de inicio válida, puede ser nula
+                'fecha_fin' => 'nullable|date',         // Fecha de fin válida, puede ser nula
             ]);
-        }
     
-        // Preparar la lista de autos con sus montos por fecha
-        $autos = [];
-        foreach ($autoIds as $autoId) {
-            $datosAuto = $query->filter(function ($resultado) use ($autoId) {
-                return $resultado->auto_id == $autoId;
-            });
-            
-            $fechas = [];
-            $montos = [];
-            $nombreAuto = '';
-            $totalMontos = 0;
-            $ultimoRegistro = null;
+            // Obtener los parámetros de la solicitud
+            $autoIds = $request->input('autos');
+            $servicio = $request->input('servicio');
+            $fechaInicio = $request->input('fecha_inicio');
+            $fechaFin = $request->input('fecha_fin');
     
-            foreach ($datosAuto as $resultado) {
-                $fechas[] = $resultado->fecha;
-                $montos[] = $resultado->total_monto;
-                $totalMontos += $resultado->total_monto;
-                $nombreAuto = $resultado->placa;
-                $ultimoRegistro = $resultado;
+            // Consultar los ingresos de autos filtrados por los parámetros recibidos
+            $query = DB::table('ingreso')
+                ->select(
+                    'ingreso.auto_id',
+                    'auto.placa',
+                    DB::raw('SUM(ingreso.monto) as total_monto'),
+                    DB::raw('DATE(ingreso.fecha) as fecha')
+                )
+                ->join('auto', 'ingreso.auto_id', '=', 'auto.id')
+                ->whereIn('ingreso.auto_id', $autoIds)  // Filtrar por los autos seleccionados
+                ->when($servicio, function ($query) use ($servicio) {
+                    return $query->where('ingreso.servicio', $servicio);  // Filtrar por servicio si se proporcionó
+                })
+                ->when($fechaInicio && $fechaFin, function ($query) use ($fechaInicio, $fechaFin) {
+                    return $query->whereBetween('ingreso.fecha', [$fechaInicio, $fechaFin]);  // Filtrar por rango de fechas
+                })
+                ->when($fechaInicio, function ($query) use ($fechaInicio) {
+                    return $query->where('ingreso.fecha', '>=', $fechaInicio);  // Filtrar por fecha de inicio si se proporcionó
+                })
+                ->when($fechaFin, function ($query) use ($fechaFin) {
+                    return $query->where('ingreso.fecha', '<=', $fechaFin);  // Filtrar por fecha de fin si se proporcionó
+                })
+                ->groupBy('ingreso.auto_id', 'auto.placa', 'fecha') // Agrupar por auto y fecha
+                ->orderBy('fecha')  // Ordenar por fecha
+                ->get();
+    
+            // Si no hay resultados, devolver una respuesta vacía
+            if ($query->isEmpty()) {
+                return response()->json([
+                    'autos' => []
+                ]);
             }
     
-            // Calcular el monto promedio
-            $montoPromedio = count($montos) > 0 ? $totalMontos / count($montos) : 0;
+            // Preparar la lista de autos con sus montos por fecha
+            $autos = [];
+            foreach ($autoIds as $autoId) {
+                $datosAuto = $query->filter(function ($resultado) use ($autoId) {
+                    return $resultado->auto_id == $autoId;
+                });
     
-            // Agregar los datos al array de autos
-            $autos[] = [
-                'nombre' => $nombreAuto ?: 'Auto ' . $autoId,
-                'fechas' => $fechas,
-                'montos' => $montos,
-                'monto_promedio' => round($montoPromedio, 2),
-                'ultimo_registro' => $ultimoRegistro
-                    ? [
-                        'fecha' => $ultimoRegistro->fecha,
-                        'monto' => $ultimoRegistro->total_monto
-                    ]
-                    : null
-            ];
+                $fechas = [];
+                $montos = [];
+                $nombreAuto = '';
+                $totalMontos = 0;
+                $ultimoRegistro = null;
+    
+                foreach ($datosAuto as $resultado) {
+                    $fechas[] = $resultado->fecha;
+                    $montos[] = $resultado->total_monto;
+                    $totalMontos += $resultado->total_monto;
+                    $nombreAuto = $resultado->placa;
+                    $ultimoRegistro = $resultado;
+                }
+    
+                // Calcular el monto promedio
+                $montoPromedio = count($montos) > 0 ? $totalMontos / count($montos) : 0;
+    
+                // Calcular el número de turnos únicos para este auto
+                $numeroTurnos = DB::table('ingreso')
+                    ->where('auto_id', $autoId)
+                    ->when($servicio, function ($query) use ($servicio) {
+                        return $query->where('servicio', $servicio);  // Filtrar por servicio si se proporcionó
+                    })
+                    ->when($fechaInicio && $fechaFin, function ($query) use ($fechaInicio, $fechaFin) {
+                        return $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);  // Filtrar por rango de fechas
+                    })
+                    ->when($fechaInicio, function ($query) use ($fechaInicio) {
+                        return $query->where('fecha', '>=', $fechaInicio);  // Filtrar por fecha de inicio
+                    })
+                    ->when($fechaFin, function ($query) use ($fechaFin) {
+                        return $query->where('fecha', '<=', $fechaFin);  // Filtrar por fecha de fin
+                    })
+                    ->count('turno_id');
+    
+                // Agregar los datos al array de autos
+                $autos[] = [
+                    'nombre' => $nombreAuto ?: 'Auto ' . $autoId,
+                    'fechas' => $fechas,
+                    'montos' => $montos,
+                    'monto_promedio' => round($montoPromedio, 2),
+                    'numero_turnos' => $numeroTurnos, // Número de turnos recorridos
+                    'ultimo_registro' => $ultimoRegistro
+                        ? [
+                            'fecha' => $ultimoRegistro->fecha,
+                            'monto' => $ultimoRegistro->total_monto
+                        ]
+                        : null
+                ];
+            }
+    
+            // Devolver la respuesta en formato JSON
+            return response()->json([
+                'autos' => $autos
+            ]);
+    
+        } catch (\Exception $e) {
+            // Si ocurre algún error, devolver una respuesta JSON con el error
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud.',
+                'message' => $e->getMessage()
+            ], 500);
         }
-    
-        // Devolver la respuesta en formato JSON
-        return response()->json([
-            'autos' => $autos
-        ]);
-    
-    } catch (\Exception $e) {
-        // Si ocurre algún error, devolver una respuesta JSON con el error
-        return response()->json([
-            'error' => 'Ocurrió un error al procesar la solicitud.',
-            'message' => $e->getMessage()
-        ], 500);
     }
-}
 
     
 
@@ -496,24 +514,35 @@ public function ingresosPorRutas(Request $request)
 
     return view('dashboard.graficoturno', compact('rutas'));
     }
-    public function obtenerTurnosPorRuta($rutaId)
+    public function obtenerTurnosPorRuta(Request $request, $rutaId)
 {
+    // Obtener el tipo de servicio desde los parámetros de la solicitud
+    $tipoServicio = $request->input('servicio');
+
+    // Verificar si el tipo de servicio está presente
+    if (!$tipoServicio) {
+        return response()->json(['message' => 'El tipo de servicio es requerido.'], 400);
+    }
+
+    // Filtrar los turnos según la ruta y el tipo de servicio
     $turnos = Ingreso::where('ruta_id', $rutaId)
+        ->where('servicio', $tipoServicio) // Asegúrate de que la columna "tipo_servicio" exista en tu tabla "ingresos"
         ->distinct()
         ->pluck('turno_id');
 
     // Si no hay turnos, devolver un mensaje de error
     if ($turnos->isEmpty()) {
-        return response()->json(['message' => 'No se encontraron turnos.'], 404);
+        return response()->json(['message' => 'No se encontraron turnos para el tipo de servicio especificado.'], 404);
     }
 
     // Obtener los detalles de los turnos y ordenarlos por hora de inicio
     $turnosDetalles = Turno::whereIn('id', $turnos)
-        ->orderBy('hora')  // Asegúrate de usar el nombre correcto de la columna
+        ->orderBy('hora') // Asegúrate de usar el nombre correcto de la columna
         ->get();
 
     return response()->json($turnosDetalles);
 }
+
 
 public function obtenerIngresosFiltrados(Request $request)
 {
@@ -634,13 +663,13 @@ public function obtenerIngresosPorRutasPorAuto(Request $request)
         'fecha_fin' => 'nullable|date',
     ]);
 
-    $autoId = $request->input('auto'); // Obtener el ID del auto
+    $autoId = $request->input('auto');
     $fechaInicio = $request->input('fecha_inicio');
     $fechaFin = $request->input('fecha_fin');
 
-    // Consulta para obtener los ingresos por rutas y el auto seleccionado
+    // Consulta para obtener los ingresos por rutas y contar turnos únicos
     $query = Ingreso::query()
-        ->where('auto_id', $autoId); // Filtrar por el auto seleccionado
+        ->where('auto_id', $autoId);
 
     if ($fechaInicio) {
         $query->where('fecha', '>=', $fechaInicio);
@@ -650,17 +679,23 @@ public function obtenerIngresosPorRutasPorAuto(Request $request)
         $query->where('fecha', '<=', $fechaFin);
     }
 
-    // Asegúrate de tener la relación definida en tu modelo
-    $ingresos = $query->with('ruta')
-        ->selectRaw('ruta.ciudad_inicial, ruta.ciudad_final, SUM(ingreso.monto) as monto')
+    // Modificar la consulta para contar los turnos únicos y sumar los ingresos
+    $ingresos = $query->with('ruta') // Asegúrate de definir la relación 'ruta' en tu modelo
+        ->selectRaw('
+            ruta.ciudad_inicial, 
+            ruta.ciudad_final, 
+            COUNT(ingreso.turno_id) as numero_turnos, 
+            SUM(ingreso.monto) as monto
+        ')
         ->join('ruta', 'ingreso.ruta_id', '=', 'ruta.id')
-        ->groupBy('ruta.ciudad_inicial', 'ruta.ciudad_final') // Corregido 'rutas.ciudad_final' a 'ruta.ciudad_final'
+        ->groupBy('ruta.ciudad_inicial', 'ruta.ciudad_final')
         ->get();
 
-    // Formatear la respuesta para devolver labels y data
+    // Formatear la respuesta
     $labels = [];
     $data = [];
-    $totalIngresos = 0; // Inicializa el total de ingresos
+    $numeroTurnos = [];
+    $totalIngresos = 0;
 
     foreach ($ingresos as $ingreso) {
         $abreviaciones = [
@@ -673,22 +708,25 @@ public function obtenerIngresosPorRutasPorAuto(Request $request)
             'MORALES' => 'TARA',
         ];
         $ciudad_inicial = strtoupper(trim($ingreso->ciudad_inicial));
-                $ciudad_final = strtoupper(trim($ingreso->ciudad_final));
-                $ciudadInicial = $abreviaciones[$ciudad_inicial] ?? $ciudad_inicial;
-                $ciudadFinal = $abreviaciones[$ciudad_final] ?? $ciudad_final;
-    // Puedes cambiar esto según lo que necesites
-        $labels[] = $ciudadInicial. ' - ' . $ciudadFinal; 
+        $ciudad_final = strtoupper(trim($ingreso->ciudad_final));
+        $ciudadInicial = $abreviaciones[$ciudad_inicial] ?? $ciudad_inicial;
+        $ciudadFinal = $abreviaciones[$ciudad_final] ?? $ciudad_final;
+
+        // Construir etiquetas con ciudad inicial y ciudad final
+        $labels[] = $ciudadInicial . ' - ' . $ciudadFinal;
         $data[] = $ingreso->monto;
-        $totalIngresos += $ingreso->monto; // Acumula el total
+        $numeroTurnos[] = $ingreso->numero_turnos; // Agregar el número de turnos
+        $totalIngresos += $ingreso->monto;
     }
 
-    // Ahora puedes incluir el total en la respuesta
     return response()->json([
         'labels' => $labels,
         'data' => $data,
-        'total' => $totalIngresos // Incluye el total
+        'numeroTurnos' => $numeroTurnos, // Incluir el número de turnos
+        'total' => $totalIngresos,
     ]);
 }
+
 
 
 }
