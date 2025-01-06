@@ -31,22 +31,22 @@ Route::middleware('auth')->group(function () {
     // web.php
     Route::get('/grafico', [IngresoController::class, 'index2'])->name('grafico.index2');
     Route::post('/grafico/filtros', [IngresoController::class, 'filtrarIngresos'])->name('grafico.filtrar');
-Route::get('/{id}/edit', [IngresoController::class, 'edit'])->name('ingresos.edit');
-Route::put('/{id}', [IngresoController::class, 'update'])->name('ingresos.update');
-Route::delete('/{id}/eliminar', [IngresoController::class, 'delete'])->name('ingresos.delete');
-Route::get('/vcreate', [IngresoController::class, 'vcreate'])->name('ingresos.vcreate');
-Route::post('/create', [IngresoController::class, 'create'])->name('ingresos.create');
-Route::get('/grafauto', [IngresoController::class, 'indexAuto'])->name('graficoauto');
-Route::post('/filtroauto', [IngresoController::class, 'filtrarAuto'])->name('filtrarauto');
-Route::get('/grafruta', [IngresoController::class, 'indexRuta'])->name('graficoruta');
-Route::post('/filtroruta', [IngresoController::class, 'filtrarRuta'])->name('filtrarruta');
-Route::get('/turnos/nopie', [IngresoController::class, 'indexturno'])->name('indexturno');
+    Route::get('/{id}/edit', [IngresoController::class, 'edit'])->name('ingresos.edit');
+    Route::put('/{id}', [IngresoController::class, 'update'])->name('ingresos.update');
+    Route::delete('/{id}/eliminar', [IngresoController::class, 'delete'])->name('ingresos.delete');
+    Route::get('/vcreate', [IngresoController::class, 'vcreate'])->name('ingresos.vcreate');
+    Route::post('/create', [IngresoController::class, 'create'])->name('ingresos.create');
+    Route::get('/grafauto', [IngresoController::class, 'indexAuto'])->name('graficoauto');
+    Route::post('/filtroauto', [IngresoController::class, 'filtrarAuto'])->name('filtrarauto');
+    Route::get('/grafruta', [IngresoController::class, 'indexRuta'])->name('graficoruta');
+    Route::post('/filtroruta', [IngresoController::class, 'filtrarRuta'])->name('filtrarruta');
+    Route::get('/turnos/nopie', [IngresoController::class, 'indexturno'])->name('indexturno');
 
-// Ruta para obtener turnos según la ruta seleccionada
-Route::get('/turnos/{rutaId}', [IngresoController::class, 'obtenerTurnosPorRuta']);
+    // Ruta para obtener turnos según la ruta seleccionada
+    Route::get('/turnos/{rutaId}', [IngresoController::class, 'obtenerTurnosPorRuta']);
 
-// Ruta para obtener ingresos filtrados
-Route::post('/ingresos-filtrados', [IngresoController::class, 'obtenerIngresosFiltrados'])->name('obtenerIngresosFiltrados');
+    // Ruta para obtener ingresos filtrados
+    Route::post('/ingresos-filtrados', [IngresoController::class, 'obtenerIngresosFiltrados'])->name('obtenerIngresosFiltrados');
 });
 //pie
 Route::get('/autoruta', [IngresoController::class, 'indexautoruta'])->name('indexautoruta');
@@ -58,6 +58,4 @@ Route::get('/grafrutapie', [IngresoController::class, 'indexrutapie'])->name('in
 Route::post('/filtrorutapie', [IngresoController::class, 'ingresosPorRutas'])->name('ingresosPorRutas');
 
 
-require __DIR__.'/auth.php';
-
-
+require __DIR__ . '/auth.php';
