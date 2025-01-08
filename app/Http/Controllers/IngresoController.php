@@ -426,7 +426,8 @@ class IngresoController extends Controller
                         'fecha' => $ultimoRegistro->fecha,
                         'monto' => $ultimoRegistro->total_monto
                     ]
-                    : null
+                    : null,
+                'total'=>$totalMontos
             ];
         }
     

@@ -78,6 +78,7 @@
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
+                    <button class="btn btn-light me-1" id="btn-dia">día</button>
                     <button class="btn btn-light me-1" id="btn-semana">Semana</button>
                     <button class="btn btn-light me-1" id="btn-mes">Mes</button>
                     <button class="btn btn-light" id="btn-año">Año</button>
@@ -159,39 +160,121 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
 <script>
-    const ctx = document.getElementById('graficoRuta').getContext('2d');
-    Chart.register({
-    id: 'crosshair',
-    beforeDraw(chart) {
-        const { ctx, tooltip } = chart;
-
-        if (tooltip && tooltip._active && tooltip._active.length) {
-            const activePoint = tooltip._active[0].element;
-            const x = activePoint.x;
-            const y = activePoint.y;
-
-            ctx.save();
-            ctx.setLineDash([5, 5]);
-
-            // Línea vertical
-            ctx.beginPath();
-            ctx.moveTo(x, chart.chartArea.top);
-            ctx.lineTo(x, chart.chartArea.bottom);
-            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-            ctx.stroke();
-
-            // Línea horizontal
-            ctx.beginPath();
-            ctx.moveTo(chart.chartArea.left, y);
-            ctx.lineTo(chart.chartArea.right, y);
-            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-            ctx.stroke();
-
-            ctx.restore();
+    let ctx = document.getElementById('graficoRuta').getContext('2d');
+    let graficoRuta;
+function fetchDataBarChart(rutasSeleccionadas, fecha_inicio, fecha_fin) {
+    let servicio = document.getElementById('servicio').value;
+    fetch('{{ route("filtrarruta") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            rutas: rutasSeleccionadas,
+            fecha_inicio: fecha_inicio,
+            fecha_fin: fecha_fin,
+            servicio: servicio
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status}`);
         }
-    }
-});
-const graficoRuta = new Chart(ctx, {
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+
+        // Destruir el gráfico existente si ya hay uno
+        if (graficoRuta) {
+            graficoRuta.destroy();
+        }
+        graficoRuta = new Chart(ctx, {
+            type: 'bar', // Tipo de gráfico de barras
+            data: {
+                labels: data.rutas.map(ruta => ruta.nombre), // Nombres de las rutas en el eje Y
+                datasets: [{
+                    label: 'Montos Totales',
+                    data: data.rutas.map(ruta => ruta.total), // Montos en el eje X
+                    backgroundColor: data.rutas.map((_, index) => getRandomColor(index, 0.6)), // Colores de las barras
+                    borderColor: data.rutas.map((_, index) => getRandomColor(index, 1)), // Colores de los bordes
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Cambiar la orientación para que las barras sean horizontales
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        enabled: true
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true, // Asegurar que el eje X empiece en 0
+                        title: {
+                            display: true,
+                            text: 'Monto Total (S/.)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Rutas'
+                        }
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error al obtener los datos:', error);
+    });
+}
+
+
+// Función para cargar datos al gráfico
+function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
+    let servicio = document.getElementById('servicio').value;
+
+    fetch('{{ route("filtrarruta") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            rutas: rutasSeleccionadas,
+            fecha_inicio: fecha_inicio,
+            fecha_fin: fecha_fin,
+            servicio: servicio
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        let todasLasFechas = [];
+        
+        // Extraer todas las fechas de todos los autos
+        data.rutas.forEach(ruta => {
+            todasLasFechas = [...todasLasFechas, ...ruta.fechas];
+        });
+
+        // Eliminar duplicados y ordenar las fechas
+        todasLasFechas = [...new Set(todasLasFechas)].sort();
+
+        // Establecer las fechas en las etiquetas del gráfico
+        // Destruir el gráfico existente si ya hay uno
+        if (graficoRuta) {
+            graficoRuta.destroy();
+        }
+        graficoRuta = new Chart(ctx, {
     type: 'line',
     data: {
         labels: [],
@@ -225,50 +308,13 @@ const graficoRuta = new Chart(ctx, {
                     min: 0, // Monto mínimo
                     max: 30000, // Monto máximo
                     ticks: {
-                        stepSize: 5000 // Incremento entre ticks del eje Y
+                        stepSize: 2000 // Incremento entre ticks del eje Y
                     }
                 }
             }
     },
     plugins: ['crosshair'] // Incluye el ID del plugin aquí si no es global
 });
-
-// Función para cargar datos al gráfico
-function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
-    let servicio = document.getElementById('servicio').value;
-
-    fetch('{{ route("filtrarruta") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            rutas: rutasSeleccionadas,
-            fecha_inicio: fecha_inicio,
-            fecha_fin: fecha_fin,
-            servicio: servicio
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Datos recibidos:', data);
-        let todasLasFechas = [];
-
-        // Extraer todas las fechas de todos los autos
-        data.rutas.forEach(ruta => {
-            todasLasFechas = [...todasLasFechas, ...ruta.fechas];
-        });
-
-        // Eliminar duplicados y ordenar las fechas
-        todasLasFechas = [...new Set(todasLasFechas)].sort();
-
-        // Establecer las fechas en las etiquetas del gráfico
         graficoRuta.data.labels = todasLasFechas;
         graficoRuta.data.datasets = data.rutas.map((ruta, index) => {
             const montos = todasLasFechas.map(fecha => {
@@ -276,7 +322,7 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
                 return indexFecha >= 0 ? ruta.montos[indexFecha] : NaN; // Usar NaN para continuar la línea
             });
             return {
-                label: ruta.nombre,
+                label: `${ruta.nombre} ( TOTAL: S/. ${ruta.total})`,
                 data: montos,
                 borderColor: getRandomColor(index),
                 tension: 0.2,
@@ -306,8 +352,6 @@ document.getElementById('btn-limpiar').addEventListener('click', function () {
     // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
-    document.getElementById('graficoRuta').style.height = "600px"; // Reducir el gráfico al tamaño original
-
     // Limpiar el gráfico y los montos promedio
     graficoRuta.data.labels = [];
     graficoRuta.data.datasets = [];
@@ -325,8 +369,6 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
     // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-    document.getElementById('graficoRuta').style.height = "800px"; // Expande el gráfico
-
     // Llamada a la función para filtrar datos
     fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin);
 });
@@ -336,7 +378,9 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         fecha_inicio.setDate(fecha_inicio.getDate() - 7);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
-
+        // Ocultar filtros y botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -346,7 +390,9 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         fecha_inicio.setMonth(fecha_inicio.getMonth() - 1);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
-
+        // Ocultar filtros y botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -356,8 +402,25 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
-
+        // Ocultar filtros y botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
+    });
+    document.getElementById('btn-dia').addEventListener('click', function () {
+        let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
+       // Establecer fechas fijas para pruebas
+let fecha_inicio = new Date(2024, 6, 20); // Año, Mes (0 basado), Día
+fecha_inicio.setHours(0, 0, 0, 0); // Establecer a las 00:00:00
+
+let fecha_fin = new Date(2024, 6, 20); // Mismo día para la prueba
+fecha_fin.setHours(0, 0, 0, 0); // Establecer a las 23:59:59
+
+        // Ocultar filtros y botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').classList.add('d-none');
+        fetchDataBarChart(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
     function getRandomColor(index) {
