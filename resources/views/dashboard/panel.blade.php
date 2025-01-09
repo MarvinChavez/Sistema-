@@ -11,8 +11,9 @@
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" id="btn-ruta">I.Oficina</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" id="btn-ruta">I.Ruta</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" id="btn-auto">I.Placa Pie</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" id="btn-auto">I.Ruta Pie</a>
                         <a class="btn btn-light me-1" href="{{ route('indexturno') }}" id="btn-ruta">I.Turno</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoauto') }}" id="btn-auto">I.Placa</a>
                         <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" id="btn-auto">I.Placa Pie</a>
@@ -24,6 +25,7 @@
                     <div class="col-md-3">
                         <label for="servicio" class="form-label">Tipo Servicio:</label>
                         <select id="servicio" name="servicio" class="form-select">
+                            <option value="">Total</option>
                             <option value="SPI">SPI</option>
                             <option value="SPP">SPP</option>
                         </select>
@@ -81,7 +83,114 @@
 </style>
 <script>
     let ctx = document.getElementById('graficoIngresos').getContext('2d');
-    let graficoIngresos = new Chart(ctx, {
+    let graficoIngresos;
+   
+    function filtrarhoy() {
+    let servicio = document.getElementById('servicio').value;
+
+    fetch('{{ route("grafico.hoy") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            servicio: servicio  // Incluir el parámetro servicio en la solicitud
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos recibidos:', data);
+
+        // Lista de colores neón
+        const neonColors = [
+            "#39FF14", "#FF073A", "#FFFF00", "#00FFFF", "#FF00FF", 
+            "#FF1493", "#00FF00", "#FF6347", "#FF4500", "#32CD32",
+            "#8A2BE2", "#00CED1", "#FF8C00", "#FF00FF", "#FF6347",
+            "#B22222", "#C71585", "#7FFF00", "#FF1493", "#9B30FF"
+        ];
+
+        // Limitar colores al número de barras
+        const backgroundColors = data.data.map((_, index) => neonColors[index % neonColors.length]);
+
+        // Crear gráfico
+        graficoIngresos = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: data.labels, // Eje Y: Rutas
+        datasets: [{
+            label: 'Monto en S/. por Ruta',
+            data: data.data, // Eje X: Monto
+            backgroundColor: backgroundColors, // Colores neón
+            borderColor: backgroundColors.map(color => color), // Misma lista para bordes
+            borderWidth: 1
+        }]
+    },
+    options: {
+        indexAxis: 'y', // Cambiar orientación a horizontal
+        scales: {
+            x: {
+                beginAtZero: true,
+                grid: {
+                    display: false // Quitar líneas de cuadrícula del eje X
+                }
+            },
+            y: {
+                grid: {
+                    display: false // Quitar líneas de cuadrícula del eje Y
+                },
+                ticks: {
+                    autoSkip: false, // Mostrar todas las etiquetas del eje Y
+                    maxRotation: 0,  // Evitar rotación si las etiquetas son largas
+                    minRotation: 0
+                }
+            }
+        }
+    }
+});
+
+
+        // Actualizar el monto total
+        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        });
+    });
+}
+
+    document.addEventListener('DOMContentLoaded', function () {
+        filtrarhoy();
+    });
+    // Función para enviar los datos de filtrado y actualizar la gráfica
+    function filtrarDatos(fechaInicio, fechaFin) {
+    // Obtener el valor del tipo de servicio seleccionado
+    let servicio = document.getElementById('servicio').value;
+
+    fetch('{{ route("grafico.filtrar") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            fecha_inicio: fechaInicio,
+            fecha_fin: fechaFin,
+            servicio: servicio  // Incluir el parámetro servicio en la solicitud
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Ordenar los ingresos por fecha
+        let datosOrdenados = data.ingresos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        let fechas = datosOrdenados.map(item => {
+        let fecha = new Date(item.fecha);
+        return fecha.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+        });
+        let montos = datosOrdenados.map(item => item.total);
+        if (graficoIngresos) {
+            graficoIngresos.destroy();
+        }
+        graficoIngresos = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
@@ -91,9 +200,9 @@
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderWidth: 2,
-                tension: 0.4,
+                tension: 0.2,
                 pointBackgroundColor: 'rgba(75, 192, 192, 1)',
-                pointRadius: 4
+                pointRadius: 2.5
             }]
         },
         options: {
@@ -140,34 +249,6 @@
             }
         }
     });
-
-    // Función para enviar los datos de filtrado y actualizar la gráfica
-    function filtrarDatos(fechaInicio, fechaFin) {
-    // Obtener el valor del tipo de servicio seleccionado
-    let servicio = document.getElementById('servicio').value;
-
-    fetch('{{ route("grafico.filtrar") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            fecha_inicio: fechaInicio,
-            fecha_fin: fechaFin,
-            servicio: servicio  // Incluir el parámetro servicio en la solicitud
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Ordenar los ingresos por fecha
-        let datosOrdenados = data.ingresos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-        let fechas = datosOrdenados.map(item => {
-        let fecha = new Date(item.fecha);
-        return fecha.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-        });
-        let montos = datosOrdenados.map(item => item.total);
-
         // Actualizar los datos del gráfico
         graficoIngresos.data.labels = fechas;
         graficoIngresos.data.datasets[0].data = montos;
@@ -207,5 +288,6 @@
         let fechaFin = document.getElementById('fecha_fin').value;
         filtrarDatos(fechaInicio, fechaFin);
     });
+
 </script>
 @endsection

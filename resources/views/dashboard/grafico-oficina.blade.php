@@ -11,19 +11,19 @@
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" id="btn-ruta">I.Oficina</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" id="btn-ruta">I.Ruta</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" id="btn-ciudad">I.Oficina</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" id="btn-ciudad">I.Ruta</a>
                         <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" id="btn-auto">I.Ruta Pie</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexturno') }}" id="btn-ruta">I.Turno</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexturno') }}" id="btn-ciudad">I.Turno</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoauto') }}" id="btn-auto">I.Placa</a>
                         <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" id="btn-auto">I.Placa Pie</a>
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}" id="btn-pie">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Filtros de Ingresos por Ruta</h4>
-                <form id="filtros-ruta-form" class="row g-3">
+                <h4 class="card-title text-center mb-4">Filtros de Ingresos por Oficina</h4>
+                <form id="filtros-ciudad-form" class="row g-3">
                         <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
-                            <label class="form-label">Ruta:</label>
+                            <label class="form-label">Oficina:</label>
                             @php
                             $abreviaciones = [
                                 'TRUJILLO' => 'TRUJ',
@@ -35,20 +35,28 @@
                                 'MORALES' => 'TARA',
                             ];
                             @endphp
-                            @foreach($rutas as $ruta)
                             @php
-                            $ciudad_inicial = strtoupper(trim($ruta->ciudad_inicial));
-                            $ciudad_final = strtoupper(trim($ruta->ciudad_final));
-                            $ciudad_inicial_abreviada = $abreviaciones[$ciudad_inicial] ?? $ciudad_inicial;
-                            $ciudad_final_abreviada = $abreviaciones[$ciudad_final] ?? $ciudad_final;
+                            $ciudadesProcesadas = []; // Array para rastrear las ciudades ya mostradas
+                        @endphp
+                        
+                        @foreach($rutas as $ruta)
+                            @php
+                                $ciudad_inicial = strtoupper(trim($ruta->ciudad_inicial));
+                                $ciudad_inicial_abreviada = $abreviaciones[$ciudad_inicial] ?? $ciudad_inicial;
                             @endphp
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="rutas[]" value="{{ $ruta->id }}" id="ruta-{{ $ruta->id }}">
-                                <label class="form-check-label" for="ruta-{{ $ruta->id }}">
-                                    {{ $ciudad_inicial_abreviada }} - {{ $ciudad_final_abreviada }}
-                                </label>
-                            </div>
-                            @endforeach
+                        
+                            @if(!in_array($ciudad_inicial, $ciudadesProcesadas))
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="ciudades[]" value="{{ $ciudad_inicial }}" id="ruta-{{ $ruta->id }}">
+                                    <label class="form-check-label" for="ruta-{{ $ruta->id }}">
+                                        {{ $ciudad_inicial_abreviada }}
+                                    </label>
+                                </div>
+                                @php
+                                    $ciudadesProcesadas[] = $ciudad_inicial; // Agregar la ciudad inicial al array
+                                @endphp
+                            @endif
+                        @endforeach
                         </div>
     
                         <div class="col-md-6">
@@ -163,17 +171,17 @@
     let ctx = document.getElementById('graficoRuta').getContext('2d');
     let graficoRuta;
 // Función para cargar datos al gráfico
-function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
+function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
     let servicio = document.getElementById('servicio').value;
 
-    fetch('{{ route("filtrarruta") }}', {
+    fetch('{{ route("filtraroficina") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({
-            rutas: rutasSeleccionadas,
+            ciudades: ciudadesSeleccionadas,
             fecha_inicio: fecha_inicio,
             fecha_fin: fecha_fin,
             servicio: servicio
@@ -190,8 +198,8 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
         let todasLasFechas = [];
         
         // Extraer todas las fechas de todos los autos
-        data.rutas.forEach(ruta => {
-            todasLasFechas = [...todasLasFechas, ...ruta.fechas];
+        data.ciudades.forEach(ciudad => {
+            todasLasFechas = [...todasLasFechas, ...ciudad.fechas];
         });
 
         // Eliminar duplicados y ordenar las fechas
@@ -244,13 +252,13 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
     plugins: ['crosshair'] // Incluye el ID del plugin aquí si no es global
 });
         graficoRuta.data.labels = todasLasFechas;
-        graficoRuta.data.datasets = data.rutas.map((ruta, index) => {
+        graficoRuta.data.datasets = data.ciudades.map((ciudad, index) => {
             const montos = todasLasFechas.map(fecha => {
-                const indexFecha = ruta.fechas.indexOf(fecha);
-                return indexFecha >= 0 ? ruta.montos[indexFecha] : NaN; // Usar NaN para continuar la línea
+                const indexFecha = ciudad.fechas.indexOf(fecha);
+                return indexFecha >= 0 ? ciudad.montos[indexFecha] : NaN; // Usar NaN para continuar la línea
             });
             return {
-                label: `${ruta.nombre} ( TOTAL: S/. ${ruta.total})`,
+                label: `${ciudad.ciudad_inicial}`,
                 data: montos,
                 borderColor: getRandomColor(index),
                 tension: 0.2,
@@ -262,11 +270,11 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
         });
         graficoRuta.update(); // Actualizar el gráfico después de cambiar los datos
         document.getElementById('btn-mostrar-promedios').addEventListener('click', () => {
-    mostrarMontosPromedio(data.rutas);
+    mostrarMontosPromedio(data.ciudades);
 });
 
 document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
-    mostrarMontos(data.rutas);
+    mostrarMontos(data.ciudades);
 });  
     })
     .catch(error => {
@@ -287,10 +295,10 @@ document.getElementById('btn-limpiar').addEventListener('click', function () {
     document.getElementById('montos').innerHTML = '';
 });
 
-document.getElementById('filtros-ruta-form').addEventListener('submit', function (event) {
+document.getElementById('filtros-ciudad-form').addEventListener('submit', function (event) {
     event.preventDefault();
 
-    let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
+    let ciudadesSeleccionadas = Array.from(document.querySelectorAll('input[name="ciudades[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_inicio = document.getElementById('fecha_inicio').value;
     let fecha_fin = document.getElementById('fecha_fin').value;
 
@@ -298,10 +306,10 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
     // Llamada a la función para filtrar datos
-    fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin);
+    fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin);
 });
     document.getElementById('btn-semana').addEventListener('click', function () {
-        let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
+        let ciudadesSeleccionadas = Array.from(document.querySelectorAll('input[name="ciudades[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = new Date();
         fecha_inicio.setDate(fecha_inicio.getDate() - 7);
         let fecha_fin = new Date();
@@ -309,11 +317,11 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-        fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
+        fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
     document.getElementById('btn-mes').addEventListener('click', function () {
-        let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
+        let ciudadesSeleccionadas = Array.from(document.querySelectorAll('input[name="ciudades[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = new Date();
         fecha_inicio.setMonth(fecha_inicio.getMonth() - 1);
         let fecha_fin = new Date();
@@ -321,11 +329,11 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-        fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
+        fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
     document.getElementById('btn-año').addEventListener('click', function () {
-        let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
+        let ciudadesSeleccionadas = Array.from(document.querySelectorAll('input[name="ciudades[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = new Date();
         fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1);
         let fecha_fin = new Date();
@@ -333,7 +341,7 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-        fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
+        fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
     function getRandomColor(index) {
@@ -362,22 +370,22 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
 
     return neonColors[index % neonColors.length]; // Ciclo a través de los colores
 }
-// Mostrar montos promedio por ruta
-function mostrarMontosPromedio(rutas) {
+// Mostrar montos promedio por ciudad
+function mostrarMontosPromedio(ciudades) {
     const contenedor = document.getElementById('montos');
     contenedor.innerHTML = '';
     let index = 0;
 
-    rutas.forEach(ruta => {
-        const { nombre, monto_promedio } = ruta;
+    ciudades.forEach(ciudad => {
+        const { ciudad_inicial, promedio } = ciudad;
 
         const card = document.createElement('div');
         card.className = 'col-auto'; // Ajustar tamaño dinámico para que se agrupen mejor
         card.style.padding = '2px'; // Reducir padding entre los cards
         card.innerHTML = `
             <div class="card card-promedio" style="background-color: ${getRandomColor(index)};">
-                <p style="font-size: 21px; color: black; font-family: Georgia, serif;">
-                    <span style="font-size: 12px;">S/.</span> ${Math.round(monto_promedio).toLocaleString('en-US')}
+                <p style="font-size: 17px; color: black; font-family: Georgia, serif;">
+                    <span style="font-size: 12px;">S/.</span> ${Math.round(promedio).toLocaleString('en-US')}
                 </p>
             </div>
         `;
@@ -387,14 +395,14 @@ function mostrarMontosPromedio(rutas) {
     });
 }
 
-// Mostrar último registro (fecha y monto) por ruta
-function mostrarMontos(rutas) {
+// Mostrar último registro (fecha y monto) por ciudad
+function mostrarMontos(ciudades) {
     const contenedor = document.getElementById('montos');
     contenedor.innerHTML = '';
     let index = 0;
 
-    rutas.forEach(ruta => {
-        const { nombre, ultimo_registro } = ruta;
+    ciudades.forEach(ciudad => {
+        const { ciudad_inicial, ultimo_registro } = ciudad;
 
         const fecha = ultimo_registro?.fecha || 'N/A';
         const monto = ultimo_registro?.monto;
@@ -404,8 +412,8 @@ function mostrarMontos(rutas) {
         card.style.padding = '2px'; // Reducir padding entre los cards
         card.innerHTML = `
             <div class="card card-promedio2" style="background-color: ${getRandomColor(index)};">
-                <p style="font-size: 13px; color: black; font-family: Georgia, serif;">${fecha}</p>
-                <p style="font-size: 20px; color: black; font-family: Georgia, serif;">
+                <p style="font-size: 12px; color: black; font-family: Georgia, serif;">${fecha}</p>
+                <p style="font-size: 15px; color: black; font-family: Georgia, serif;">
                     <span style="font-size: 12px;">S/.</span> ${Math.round(monto).toLocaleString('en-US')}
                 </p>
             </div>`;

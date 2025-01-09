@@ -37,7 +37,7 @@ class IngresoController extends Controller
     }
 
     // Filtrar por servicio si se proporciona `servicio`
-    if ($request->filled('servicio')) {
+    if ($request->filled('servicio') && $request->input('servicio') !== '') {
         $servicio = trim($request->input('servicio'));  // Remover espacios en blanco
         $query->where('servicio', '=', $servicio); // Filtrar donde el servicio sea igual al valor ingresado
     }
@@ -56,11 +56,81 @@ class IngresoController extends Controller
         'montoTotal' => $montoTotal
     ]);
 }
+public function ingresosPorRutaHoy(Request $request)
+{
+    // Obtener el día actual
+    $fechaHoy = date('2024-07-01');
 
+    $abreviaciones = [
+        'TRUJILLO' => 'TRUJ',
+        'CAJAMARCA' => 'CAXA',
+        'JAEN' => 'JAEN',
+        'CHICLAYO' => 'CHIC',
+        'PIURA' => 'PIUR',
+        'LA VICTORIA' => 'LIMA',
+        'MORALES' => 'TARA',
+    ];
     
+    // Construir una cláusula CASE para cada ciudad en ciudad_inicial
+    $ciudadInicialCase = "CASE";
+    foreach ($abreviaciones as $ciudad => $abreviacion) {
+        $ciudadInicialCase .= " WHEN TRIM(ruta.ciudad_inicial) = '$ciudad' THEN '$abreviacion'";
+    }
+    $ciudadInicialCase .= " ELSE TRIM(ruta.ciudad_inicial) END";
+    
+    // Construir una cláusula CASE para cada ciudad en ciudad_final
+    $ciudadFinalCase = "CASE";
+    foreach ($abreviaciones as $ciudad => $abreviacion) {
+        $ciudadFinalCase .= " WHEN TRIM(ruta.ciudad_final) = '$ciudad' THEN '$abreviacion'";
+    }
+    $ciudadFinalCase .= " ELSE TRIM(ruta.ciudad_final) END";
+    
+    // Construir la consulta
+    $query = DB::table('ingreso')
+        ->join('ruta', 'ingreso.ruta_id', '=', 'ruta.id')
+        ->select(
+            'ruta.id as ruta_id',
+            DB::raw("CONCAT($ciudadInicialCase, ' - ', $ciudadFinalCase) as ruta"),
+            DB::raw('SUM(ingreso.monto) as total')
+        )
+        ->where('ingreso.fecha', '=', $fechaHoy)
+        ->groupBy('ruta.id', 'ruta.ciudad_inicial', 'ruta.ciudad_final')
+        ->orderBy('total', 'desc'); // Ordenar de mayor a menor por monto
 
-    
-    
+    // Filtrar por servicio si se proporciona
+    if ($request->filled('servicio')) {
+        $servicio = $request->input('servicio');
+        $query->where('ingreso.servicio', '=', $servicio);
+    }
+
+    // Obtener los resultados por ruta
+    $ingresos = $query->get();
+
+    // Calcular el monto total de todos los ingresos filtrados
+    $totalIngresos = DB::table('ingreso')
+        ->join('ruta', 'ingreso.ruta_id', '=', 'ruta.id')
+        ->where('ingreso.fecha', '=', $fechaHoy);
+
+    // Aplicar filtro de servicio si se proporciona
+    if ($request->filled('servicio')) {
+        $totalIngresos->where('ingreso.servicio', '=', $servicio);
+    }
+
+    $montoTotal = $totalIngresos->sum('ingreso.monto'); // Suma total de los ingresos
+
+    // Preparar los datos para el gráfico
+    $data = [
+        'labels' => $ingresos->pluck('ruta'),  // Rutas para el eje Y
+        'data' => $ingresos->pluck('total'),  // Montos para el eje X
+        'montoTotal' => $montoTotal           // Monto total de los ingresos
+    ];
+
+    // Retornar los datos como JSON
+    return response()->json($data);
+}
+
+
+
     public function import_excel_post(Request $request)
     {
         // Validamos que haya un archivo presente.
@@ -313,6 +383,124 @@ class IngresoController extends Controller
 
         return view('dashboard.grafico-ruta', compact('rutas'));
     }
+    public function indexoficina()
+    {
+        // Obtener todos los autos para el selector
+        $rutas = Ruta::all();
+
+        return view('dashboard.grafico-oficina', compact('rutas'));
+    }
+    public function filtrarOficina(Request $request)
+{
+    // Validar los datos recibidos
+    $request->validate([
+        'ciudades' => 'required|array',      // Las ciudades seleccionadas deben ser un array
+        'servicio' => 'nullable|string',    // El servicio debe ser un string "spi" o "spp"
+        'fecha_inicio' => 'nullable|date',  // Fecha de inicio válida, pero puede ser nula
+        'fecha_fin' => 'nullable|date',     // Fecha de fin válida, pero puede ser nula
+    ]);
+
+    // Obtener los parámetros de la solicitud
+    $ciudades = $request->input('ciudades');
+    $servicio = $request->input('servicio');
+    $fechaInicio = $request->input('fecha_inicio');
+    $fechaFin = $request->input('fecha_fin');
+
+    // Consultar ingresos, uniendo con la tabla de rutas
+    $query = DB::table('ingreso')
+        ->join('ruta', 'ingreso.ruta_id', '=', 'ruta.id')
+        ->select(
+            'ruta.ciudad_inicial',
+            'ingreso.fecha',
+            DB::raw('SUM(ingreso.monto) as total_monto')
+        )
+        ->whereIn('ruta.ciudad_inicial', $ciudades); // Filtrar por ciudad_inicial seleccionadas
+
+    // Aplicar filtro opcional de servicio
+    if ($servicio) {
+        $query->where('ingreso.servicio', $servicio);
+    }
+
+    // Aplicar filtros de fechas si están presentes
+    if ($fechaInicio && $fechaFin) {
+        $query->whereBetween('ingreso.fecha', [$fechaInicio, $fechaFin]);
+    } elseif ($fechaInicio) {
+        $query->where('ingreso.fecha', '>=', $fechaInicio);
+    } elseif ($fechaFin) {
+        $query->where('ingreso.fecha', '<=', $fechaFin);
+    }
+
+    // Agrupar y ordenar los resultados
+    $resultados = $query
+        ->groupBy('ruta.ciudad_inicial', 'ingreso.fecha')
+        ->orderBy('ruta.ciudad_inicial')
+        ->orderBy('ingreso.fecha')
+        ->get();
+
+    // Verificar si hay resultados; si no, devolver un gráfico vacío
+    if ($resultados->isEmpty()) {
+        return response()->json([
+            'ciudades' => []
+        ]);
+    }
+
+    // Definir las abreviaciones
+    $abreviaciones = [
+        'TRUJILLO' => 'TRUJ',
+        'CAJAMARCA' => 'CAXA',
+        'JAEN' => 'JAEN',
+        'CHICLAYO' => 'CHIC',
+        'PIURA' => 'PIUR',
+        'LA VICTORIA' => 'LIMA',
+        'MORALES' => 'TARA',
+    ];
+
+    // Construir el resultado final agrupado por ciudad inicial
+    $ciudadesResultados = [];
+    foreach ($ciudades as $ciudad) {
+        // Filtrar los resultados por ciudad inicial
+        $datosCiudad = $resultados->filter(function ($resultado) use ($ciudad) {
+            return strtoupper(trim($resultado->ciudad_inicial)) === strtoupper(trim($ciudad));
+        });
+
+        // Construir los datos para la ciudad
+        $fechas = [];
+        $montos = [];
+        foreach ($datosCiudad as $resultado) {
+            $fechas[] = $resultado->fecha;
+            $montos[] = round($resultado->total_monto, 2);
+        }
+
+        // Calcular promedio si hay datos
+        $promedio = count($montos) > 0 ? array_sum($montos) / count($montos) : 0;
+
+        // Obtener último registro
+        $ultimoRegistro = $datosCiudad->last();
+        $ultimaFecha = $ultimoRegistro ? $ultimoRegistro->fecha : null;
+        $ultimoMonto = $ultimoRegistro ? round($ultimoRegistro->total_monto, 2) : null;
+
+        // Agregar datos al array final
+        $ciudadesResultados[] = [
+            'ciudad_inicial' => $abreviaciones[strtoupper(trim($ciudad))] ?? strtoupper(trim($ciudad)),
+            'fechas' => $fechas,
+            'montos' => $montos,
+            'promedio' => round($promedio, 2),
+            'ultimo_registro' => [
+                'fecha' => $ultimaFecha,
+                'monto' => $ultimoMonto,
+            ],
+        ];
+    }
+
+    // Devolver la respuesta en formato JSON
+    return response()->json([
+        'ciudades' => $ciudadesResultados
+    ]);
+}
+
+
+    
+
 
     public function filtrarRuta(Request $request)
     {
