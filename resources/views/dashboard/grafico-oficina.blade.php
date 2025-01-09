@@ -62,6 +62,7 @@
                         <div class="col-md-6">
                             <label for="servicio" class="form-label">Tipo Servicio:</label>
                             <select id="servicio" name="servicio" class="form-select">
+                                <option value="">Total</option>
                                 <option value="SPI">SPI</option>
                                 <option value="SPP">SPP</option>
                             </select>
