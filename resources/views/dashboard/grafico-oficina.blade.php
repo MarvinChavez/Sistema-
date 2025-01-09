@@ -93,7 +93,7 @@
                     <button class="btn btn-light" id="btn-año">Año</button>
                 </div>
 
-                <div class="card shadow-sm mt-4" id="grafico-container" style="background-color: #000000">
+                <div class="card shadow-sm mt-4" id="grafico-container">
                     <div class="card-body" style="padding-top: 50px;">
                         <canvas id="graficoRuta" style="height: 600px; width: 100%;"></canvas>
                     </div>
@@ -238,6 +238,9 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
                     },
                     ticks: {
                         maxTicksLimit: 8 // Limitar el número máximo de etiquetas visibles
+                    },
+                    grid: {
+                        display: false
                     }
                 },
                 y: {
@@ -246,6 +249,9 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
                     max: 30000, // Monto máximo
                     ticks: {
                         stepSize: 2000 // Incremento entre ticks del eje Y
+                    },
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.1)'
                     }
                 }
             }
