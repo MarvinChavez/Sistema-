@@ -88,15 +88,15 @@
                     <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
                 </div>
                 <!-- Contenedor para el gráfico de líneas -->
-                <div class="card shadow-sm mt-4">
+                <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
                         <button class="btn btn-light me-1" id="btn-semana">Semana</button>
                         <button class="btn btn-light me-1" id="btn-mes">Mes</button>
                         <button class="btn btn-light" id="btn-año">Año</button>
                     </div>
-                    <div class="card shadow-sm mt-4">
-                        <div class="card-body" style="padding-top: 50px;">
-                            <canvas id="graficoTurno" style="height: 600px; width: 100%;"></canvas>
+                    <div class="card shadow-sm mt-12 container-fluid">
+                        <div class="container-fluid" style="padding-top: 50px;width: 800px; height: 700px">
+                            <canvas id="graficoTurno" style="width: auto; height: auto;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -207,10 +207,9 @@
 document.getElementById('servicio').addEventListener('change', function() {
     document.getElementById('rutaSelect').dispatchEvent(new Event('change')); // Simular cambio en la ruta para actualizar los turnos
 });
-
-
-    const ctxTurno = document.getElementById('graficoTurno').getContext('2d');
-    const graficoTurno = new Chart(ctxTurno, {
+    let ctxTurno = document.getElementById('graficoTurno').getContext('2d');
+    let graficoTurno;
+    graficoTurno = new Chart(ctxTurno, {
         type: 'line',
         data: {
             labels: [],
@@ -218,39 +217,69 @@ document.getElementById('servicio').addEventListener('change', function() {
         },
         options: {
             responsive: true,
-            scales: {
-                x: {
-                    type: 'time', // Configuración para tiempo
+        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
+        plugins: {
+            title: {
+                display: true, // Habilitar el título
+                text: 'Importe por Turno', // Título inicial
+                font: {
+                    size: 20, // Tamaño de fuente
+                    weight: 'bold' // Grosor de fuente
+                },
+                padding: {
+                    top: 10, // Espaciado superior
+                    bottom: 30 // Espaciado inferior
+                }
+            },
+            legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#333',
+                        font: {
+                            size: 14
+                        }
+                    }
+                }
+        },
+        scales: {
+            x: {
+                type: 'time', // Configuración para tiempo
                     time: {
                         unit: 'day' // Unidad de tiempo: días
                     },
-                    ticks: {
-                        maxTicksLimit: 8 // Limitar el número máximo de etiquetas visibles
+                    title: {
+                        display: true,
+                        text: 'Fecha',
+                        color: '#333',
+                        font: {
+                            size: 16
+                        }
                     },
                     grid: {
                         display: false
                     }
                 },
                 y: {
-                    beginAtZero: true, // Comenzar desde 0
-                    min: 0, // Monto mínimo
-                    max: 5000, // Monto máximo
-                    ticks: {
-                        stepSize: 2500 // Incremento entre ticks del eje Y
+                    title: {
+                        display: true,
+                        text: 'Importe (S/.)',
+                        color: '#333',
+                        font: {
+                            size: 16
+                        }
                     },
                     grid: {
                         color: 'rgba(200, 200, 200, 0.1)'
                     }
                 }
             }
-        }
+    },
     });
     document.getElementById('btn-limpiar').addEventListener('click', function () {
          // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
-    document.getElementById('graficoTurno').style.height = "600px"; // Reducir el gráfico al tamaño original
-
     // Limpiar el gráfico y los montos promedio
     graficoTurno.data.labels = [];
     graficoTurno.data.datasets = [];
@@ -265,14 +294,6 @@ document.getElementById('servicio').addEventListener('change', function() {
     // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-    document.getElementById('graficoTurno').style.height = "800px"; // Expande el gráfico
-    console.log('Datos enviados: ', {
-        autosSeleccionados,
-        fecha_inicio,
-        fecha_fin
-    });
-
-
     // Llamada a la función para filtrar datos
         fetchTurnoData(autosSeleccionados, fecha_inicio, fecha_fin);
     });
@@ -357,6 +378,7 @@ graficoTurno.data.datasets = data.turnos.map((turno, index) => {
                 label: turno.nombre,
                 data: montos,
                 borderColor: generarColor(index),
+                backgroundColor: generarColor(index),
                 tension: 0.2,
                 pointRadius: 2.5,
                 pointHoverRadius: 6,

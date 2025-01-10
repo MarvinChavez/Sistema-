@@ -84,11 +84,11 @@
                     <button class="btn btn-light" id="btn-año">Año</button>
                 </div>
 
-                <div class="card shadow-sm mt-4" id="grafico-container">
-                    <div class="card-body" style="padding-top: 50px;">
-                        <canvas id="graficoRuta" style="height: 600px; width: 100%;"></canvas>
+                <div class="card shadow-sm mt-12 container-fluid"  id="grafico-container">
+                    <div class="container-fluid" style="padding-top: 50px;width: 800px; height: 700px">
+                        <canvas id="graficoRuta" style="width: auto; height: auto;"></canvas>
                     </div>
-                </div>      
+                </div>       
             </div>
             <div class="row mt-4">
                 <!-- Contenedor de los botones (ocupando solo el espacio necesario) -->
@@ -210,36 +210,57 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
         plugins: {
-            tooltip: {
-                enabled: true,
-                intersect: true,
-                mode: 'nearest'
-            }
-        },
-        hover: {
-            mode: 'nearest',
-            intersect: true
+            title: {
+                display: true, // Habilitar el título
+                text: 'Importe por Ruta', // Título inicial
+                font: {
+                    size: 20, // Tamaño de fuente
+                    weight: 'bold' // Grosor de fuente
+                },
+                padding: {
+                    top: 10, // Espaciado superior
+                    bottom: 30 // Espaciado inferior
+                }
+            },
+            legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#333',
+                        font: {
+                            size: 14
+                        }
+                    }
+                }
         },
         scales: {
-                x: {
-                    type: 'time', // Configuración para tiempo
+            x: {
+                type: 'time', // Configuración para tiempo
                     time: {
                         unit: 'day' // Unidad de tiempo: días
                     },
-                    ticks: {
-                        maxTicksLimit: 8 // Limitar el número máximo de etiquetas visibles
+                    title: {
+                        display: true,
+                        text: 'Fecha',
+                        color: '#333',
+                        font: {
+                            size: 16
+                        }
                     },
                     grid: {
                         display: false
                     }
                 },
                 y: {
-                    beginAtZero: true, // Comenzar desde 0
-                    min: 0, // Monto mínimo
-                    max: 30000, // Monto máximo
-                    ticks: {
-                        stepSize: 2000 // Incremento entre ticks del eje Y
+                    title: {
+                        display: true,
+                        text: 'Importe (S/.)',
+                        color: '#333',
+                        font: {
+                            size: 16
+                        }
                     },
                     grid: {
                         color: 'rgba(200, 200, 200, 0.1)'
@@ -247,7 +268,6 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
                 }
             }
     },
-    plugins: ['crosshair'] // Incluye el ID del plugin aquí si no es global
 });
         graficoRuta.data.labels = todasLasFechas;
         graficoRuta.data.datasets = data.rutas.map((ruta, index) => {
@@ -259,6 +279,7 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
                 label: `${ruta.nombre} ( TOTAL: S/. ${ruta.total})`,
                 data: montos,
                 borderColor: getRandomColor(index),
+                backgroundColor:getRandomColor(index),
                 tension: 0.2,
                 pointRadius: 2.5,
                 pointHoverRadius: 6,
@@ -283,10 +304,8 @@ document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
 }
 
 document.getElementById('btn-limpiar').addEventListener('click', function () {
-    // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
-    // Limpiar el gráfico y los montos promedio
     graficoRuta.data.labels = [];
     graficoRuta.data.datasets = [];
     graficoRuta.update();

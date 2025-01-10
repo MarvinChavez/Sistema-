@@ -46,23 +46,26 @@
 
             <!-- Monto Total -->
             <div class="text-center mt-4">
-                <h5>Monto Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
             </div>
 
             <!-- Gráfico -->
-            <div class="position-relative mt-4">
-                <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
-                    <button class="btn btn-light me-1" id="btn-semana">Semana</button>
-                    <button class="btn btn-light me-1" id="btn-mes">Mes</button>
-                    <button class="btn btn-light" id="btn-año">Año</button>
-                </div>
+            <!-- Gráfico -->
+<div class="position-relative mt-4">
+    <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
+        <button class="btn btn-light me-1" id="btn-semana">Semana</button>
+        <button class="btn btn-light me-1" id="btn-mes">Mes</button>
+        <button class="btn btn-light" id="btn-año">Año</button>
+    </div>
 
-                <div class="card shadow-sm mt-4">
-                    <div class="card-body" style="padding-top: 50px;">
-                        <canvas id="graficoIngresos" style="height: 400px; width: 100%;"></canvas>
-                    </div>
-                </div>
-            </div>
+    <div class="card shadow-sm mt-12 container-fluid">
+        <div style="padding-top: 50px;width: 800px; height: 700px">
+            <!-- Ajusta el canvas para que sea responsivo -->
+            <canvas id="graficoIngresos" style="width: 100%; height: auto;"></canvas>
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
 </div>
@@ -89,64 +92,105 @@
     let servicio = document.getElementById('servicio').value;
 
     fetch('{{ route("grafico.hoy") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            servicio: servicio  // Incluir el parámetro servicio en la solicitud
-        })
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify({
+        servicio: servicio  // Incluir el parámetro servicio en la solicitud
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Datos recibidos:', data);
-
-        // Lista de colores neón
-        const neonColors = [
-            "#39FF14", "#FF073A", "#FFFF00", "#00FFFF", "#FF00FF", 
-            "#FF1493", "#00FF00", "#FF6347", "#FF4500", "#32CD32",
-            "#8A2BE2", "#00CED1", "#FF8C00", "#FF00FF", "#FF6347",
-            "#B22222", "#C71585", "#7FFF00", "#FF1493", "#9B30FF"
-        ];
-
-        // Limitar colores al número de barras
-        const backgroundColors = data.data.map((_, index) => neonColors[index % neonColors.length]);
-
-        // Crear gráfico
-        graficoIngresos = new Chart(ctx, {
+})
+.then(response => response.json())
+.then(data => {
+    console.log('Datos recibidos:', data);
+    graficoIngresos = new Chart(ctx, {
     type: 'bar',
     data: {
         labels: data.labels, // Eje Y: Rutas
         datasets: [{
-            label: 'Monto en S/. por Ruta',
             data: data.data, // Eje X: Monto
-            backgroundColor: backgroundColors, // Colores neón
-            borderColor: backgroundColors.map(color => color), // Misma lista para bordes
+            backgroundColor: 'rgba(75, 192, 192, 0.6)', // Colores neón
+            borderColor: 'rgba(75, 192, 192, 1)', // Bordes
             borderWidth: 1
         }]
     },
     options: {
-        indexAxis: 'y', // Cambiar orientación a horizontal
-        scales: {
-            x: {
-                beginAtZero: true,
-                grid: {
-                    display: false // Quitar líneas de cuadrícula del eje X
+        responsive: true, // Habilitar respuesta dinámica al tamaño del contenedor
+        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
+        indexAxis: 'y', // Orientación horizontal
+        plugins: {
+            title: {
+                display: true, // Habilitar el título
+                text: 'Importe del día', // Título inicial
+                font: {
+                    size: 20, // Tamaño de fuente
+                    weight: 'bold' // Grosor de fuente
+                },
+                padding: {
+                    top: 10, // Espaciado superior
+                    bottom: 30 // Espaciado inferior
                 }
             },
-            y: {
-                grid: {
-                    display: false // Quitar líneas de cuadrícula del eje Y
+            tooltip: {
+                enabled: true // Habilitar tooltips
+            },
+            legend: {
+                display: false // Ocultar leyenda si no es necesaria
+            },
+            datalabels: {
+                anchor: 'end',
+                align: 'right',
+                formatter: (value) => {
+                    const formatter = new Intl.NumberFormat('es-PE', {
+                        style: 'currency',
+                        currency: 'PEN', // Moneda en Soles
+                        minimumFractionDigits: 0 // Sin decimales
+                    });
+                    return formatter.format(value); // Formatear con separador de miles y símbolo de moneda
                 },
-                ticks: {
-                    autoSkip: false, // Mostrar todas las etiquetas del eje Y
-                    maxRotation: 0,  // Evitar rotación si las etiquetas son largas
-                    minRotation: 0
+                color: '#000', // Opcional: Cambia el color de las etiquetas
+                font: {
+                    size: 12, // Opcional: Ajusta el tamaño de la fuente
+                    weight: 'bold' // Opcional: Cambia el grosor de la fuente
                 }
             }
+        },
+        scales: {
+            x: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 20000,
+                        grid: {
+                            display: false,
+                        },
+                        ticks: {
+                            stepSize: 2000,
+                        }
+                    },
+            y: {
+                grid: {
+                    display: false // Ocultar líneas de cuadrícula
+                },
+                ticks: {
+                    autoSkip: false, // Mostrar todas las etiquetas
+                    maxRotation: 0,  // Sin rotación para etiquetas
+                    minRotation: 0,
+                    padding: 10 // Separación entre etiquetas del eje Y y las barras
+                }
+            }
+        },
+        layout: {
+            padding: 20 // Espaciado alrededor del gráfico
+        },
+        elements: {
+            bar: {
+                barPercentage: 0.5, // Ancho de las barras
+                categoryPercentage: 0.7 // Espacio entre categorías
+            }
         }
-    }
+    },
+    plugins: [ChartDataLabels] // Asegúrate de incluir ChartDataLabels
 });
 
 
@@ -165,7 +209,9 @@
     function filtrarDatos(fechaInicio, fechaFin) {
     // Obtener el valor del tipo de servicio seleccionado
     let servicio = document.getElementById('servicio').value;
-
+    if (graficoIngresos) {
+    graficoIngresos.destroy(); // Destruir el gráfico anterior
+} 
     fetch('{{ route("grafico.filtrar") }}', {
         method: 'POST',
         headers: {
@@ -187,15 +233,13 @@
         return fecha.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
         });
         let montos = datosOrdenados.map(item => item.total);
-        if (graficoIngresos) {
-            graficoIngresos.destroy();
-        }
+        
         graficoIngresos = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
             datasets: [{
-                label: 'Monto total de ingresos',
+                label: 'Importe total de ingresos',
                 data: [],
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -207,7 +251,20 @@
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
             plugins: {
+                title: {
+                display: true, // Habilitar el título
+                text: 'Importe Total', // Título inicial
+                font: {
+                    size: 20, // Tamaño de fuente
+                    weight: 'bold' // Grosor de fuente
+                },
+                padding: {
+                    top: 10, // Espaciado superior
+                    bottom: 30 // Espaciado inferior
+                }
+            },
                 legend: {
                     display: true,
                     position: 'top',
@@ -288,6 +345,9 @@
         let fechaFin = document.getElementById('fecha_fin').value;
         filtrarDatos(fechaInicio, fechaFin);
     });
-
+    function cambiarTitulo(nuevoTitulo) {
+    graficoIngresos.options.plugins.title.text = nuevoTitulo; // Cambiar el texto del título
+    graficoIngresos.update(); // Actualizar el gráfico
+}
 </script>
 @endsection

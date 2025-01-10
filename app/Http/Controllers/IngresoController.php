@@ -391,112 +391,123 @@ public function ingresosPorRutaHoy(Request $request)
         return view('dashboard.grafico-oficina', compact('rutas'));
     }
     public function filtrarOficina(Request $request)
-{
-    // Validar los datos recibidos
-    $request->validate([
-        'ciudades' => 'required|array',      // Las ciudades seleccionadas deben ser un array
-        'servicio' => 'nullable|string',    // El servicio debe ser un string "spi" o "spp"
-        'fecha_inicio' => 'nullable|date',  // Fecha de inicio válida, pero puede ser nula
-        'fecha_fin' => 'nullable|date',     // Fecha de fin válida, pero puede ser nula
-    ]);
-
-    // Obtener los parámetros de la solicitud
-    $ciudades = $request->input('ciudades');
-    $servicio = $request->input('servicio');
-    $fechaInicio = $request->input('fecha_inicio');
-    $fechaFin = $request->input('fecha_fin');
-
-    // Consultar ingresos, uniendo con la tabla de rutas
-    $query = DB::table('ingreso')
-        ->join('ruta', 'ingreso.ruta_id', '=', 'ruta.id')
-        ->select(
-            'ruta.ciudad_inicial',
-            'ingreso.fecha',
-            DB::raw('SUM(ingreso.monto) as total_monto')
-        )
-        ->whereIn('ruta.ciudad_inicial', $ciudades); // Filtrar por ciudad_inicial seleccionadas
-
-    // Aplicar filtro opcional de servicio
-    if ($servicio) {
-        $query->where('ingreso.servicio', $servicio);
-    }
-
-    // Aplicar filtros de fechas si están presentes
-    if ($fechaInicio && $fechaFin) {
-        $query->whereBetween('ingreso.fecha', [$fechaInicio, $fechaFin]);
-    } elseif ($fechaInicio) {
-        $query->where('ingreso.fecha', '>=', $fechaInicio);
-    } elseif ($fechaFin) {
-        $query->where('ingreso.fecha', '<=', $fechaFin);
-    }
-
-    // Agrupar y ordenar los resultados
-    $resultados = $query
-        ->groupBy('ruta.ciudad_inicial', 'ingreso.fecha')
-        ->orderBy('ruta.ciudad_inicial')
-        ->orderBy('ingreso.fecha')
-        ->get();
-
-    // Verificar si hay resultados; si no, devolver un gráfico vacío
-    if ($resultados->isEmpty()) {
+    {
+        // Validar los datos recibidos
+        $request->validate([
+            'ciudades' => 'required|array',      // Las ciudades seleccionadas deben ser un array
+            'servicio' => 'nullable|string',    // El servicio debe ser un string "spi" o "spp"
+            'fecha_inicio' => 'nullable|date',  // Fecha de inicio válida, pero puede ser nula
+            'fecha_fin' => 'nullable|date',     // Fecha de fin válida, pero puede ser nula
+        ]);
+    
+        // Obtener los parámetros de la solicitud
+        $ciudades = $request->input('ciudades');
+        $servicio = $request->input('servicio');
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+    
+        // Consultar ingresos, uniendo con la tabla de rutas
+        $query = DB::table('ingreso')
+            ->join('ruta', 'ingreso.ruta_id', '=', 'ruta.id')
+            ->select(
+                'ruta.ciudad_inicial',
+                'ingreso.fecha',
+                DB::raw('SUM(ingreso.monto) as total_monto')
+            )
+            ->whereIn('ruta.ciudad_inicial', $ciudades); // Filtrar por ciudad_inicial seleccionadas
+    
+        // Aplicar filtro opcional de servicio
+        if ($servicio) {
+            $query->where('ingreso.servicio', $servicio);
+        }
+    
+        // Aplicar filtros de fechas si están presentes
+        if ($fechaInicio && $fechaFin) {
+            $query->whereBetween('ingreso.fecha', [$fechaInicio, $fechaFin]);
+        } elseif ($fechaInicio) {
+            $query->where('ingreso.fecha', '>=', $fechaInicio);
+        } elseif ($fechaFin) {
+            $query->where('ingreso.fecha', '<=', $fechaFin);
+        }
+    
+        // Agrupar y ordenar los resultados
+        $resultados = $query
+            ->groupBy('ruta.ciudad_inicial', 'ingreso.fecha')
+            ->orderBy('ruta.ciudad_inicial')
+            ->orderBy('ingreso.fecha')
+            ->get();
+    
+        // Verificar si hay resultados; si no, devolver un gráfico vacío
+        if ($resultados->isEmpty()) {
+            return response()->json([
+                'ciudades' => [],
+                'total_general' => 0
+            ]);
+        }
+    
+        // Definir las abreviaciones
+        $abreviaciones = [
+            'TRUJILLO' => 'TRUJ',
+            'CAJAMARCA' => 'CAXA',
+            'JAEN' => 'JAEN',
+            'CHICLAYO' => 'CHIC',
+            'PIURA' => 'PIUR',
+            'LA VICTORIA' => 'LIMA',
+            'MORALES' => 'TARA',
+        ];
+    
+        // Construir el resultado final agrupado por ciudad inicial
+        $ciudadesResultados = [];
+        $totalGeneral = 0;
+    
+        foreach ($ciudades as $ciudad) {
+            // Filtrar los resultados por ciudad inicial
+            $datosCiudad = $resultados->filter(function ($resultado) use ($ciudad) {
+                return strtoupper(trim($resultado->ciudad_inicial)) === strtoupper(trim($ciudad));
+            });
+    
+            // Construir los datos para la ciudad
+            $fechas = [];
+            $montos = [];
+            $montoTotalCiudad = 0;
+    
+            foreach ($datosCiudad as $resultado) {
+                $fechas[] = $resultado->fecha;
+                $montos[] = round($resultado->total_monto, 2);
+                $montoTotalCiudad += $resultado->total_monto;
+            }
+    
+            // Calcular promedio si hay datos
+            $promedio = count($montos) > 0 ? array_sum($montos) / count($montos) : 0;
+            // Obtener último registro
+            $ultimoRegistro = $datosCiudad->last();
+            $ultimaFecha = $ultimoRegistro ? $ultimoRegistro->fecha : null;
+            $ultimoMonto = $ultimoRegistro ? round($ultimoRegistro->total_monto, 2) : null;
+    
+            // Agregar datos al array final
+            $ciudadesResultados[] = [
+                'ciudad_inicial' => $abreviaciones[strtoupper(trim($ciudad))] ?? strtoupper(trim($ciudad)),
+'montoTotal' => number_format($montoTotalCiudad, 2, '.', ','),
+                'fechas' => $fechas,
+                'montos' => $montos,
+                'promedio' => round($promedio, 2),
+                'ultimo_registro' => [
+                    'fecha' => $ultimaFecha,
+                    'monto' => $ultimoMonto,
+                ],
+            ];
+    
+            // Acumular al total general
+            $totalGeneral += $montoTotalCiudad;
+        }
+    
+        // Devolver la respuesta en formato JSON
         return response()->json([
-            'ciudades' => []
+            'ciudades' => $ciudadesResultados,
+            'total_general' => round($totalGeneral, 2),
         ]);
     }
-
-    // Definir las abreviaciones
-    $abreviaciones = [
-        'TRUJILLO' => 'TRUJ',
-        'CAJAMARCA' => 'CAXA',
-        'JAEN' => 'JAEN',
-        'CHICLAYO' => 'CHIC',
-        'PIURA' => 'PIUR',
-        'LA VICTORIA' => 'LIMA',
-        'MORALES' => 'TARA',
-    ];
-
-    // Construir el resultado final agrupado por ciudad inicial
-    $ciudadesResultados = [];
-    foreach ($ciudades as $ciudad) {
-        // Filtrar los resultados por ciudad inicial
-        $datosCiudad = $resultados->filter(function ($resultado) use ($ciudad) {
-            return strtoupper(trim($resultado->ciudad_inicial)) === strtoupper(trim($ciudad));
-        });
-
-        // Construir los datos para la ciudad
-        $fechas = [];
-        $montos = [];
-        foreach ($datosCiudad as $resultado) {
-            $fechas[] = $resultado->fecha;
-            $montos[] = round($resultado->total_monto, 2);
-        }
-
-        // Calcular promedio si hay datos
-        $promedio = count($montos) > 0 ? array_sum($montos) / count($montos) : 0;
-
-        // Obtener último registro
-        $ultimoRegistro = $datosCiudad->last();
-        $ultimaFecha = $ultimoRegistro ? $ultimoRegistro->fecha : null;
-        $ultimoMonto = $ultimoRegistro ? round($ultimoRegistro->total_monto, 2) : null;
-
-        // Agregar datos al array final
-        $ciudadesResultados[] = [
-            'ciudad_inicial' => $abreviaciones[strtoupper(trim($ciudad))] ?? strtoupper(trim($ciudad)),
-            'fechas' => $fechas,
-            'montos' => $montos,
-            'promedio' => round($promedio, 2),
-            'ultimo_registro' => [
-                'fecha' => $ultimaFecha,
-                'monto' => $ultimoMonto,
-            ],
-        ];
-    }
-
-    // Devolver la respuesta en formato JSON
-    return response()->json([
-        'ciudades' => $ciudadesResultados
-    ]);
-}
+    
 
 
     
