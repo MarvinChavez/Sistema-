@@ -11,16 +11,17 @@
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" id="btn-ruta">I.Oficina</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" id="btn-ruta">I.Ruta</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" id="btn-auto">I.Ruta Pie</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexturno') }}" id="btn-ruta">I.Turno</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficoauto') }}" id="btn-auto">I.Placa</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" id="btn-auto">I.Placa Pie</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}" id="btn-pie">I. Placa-Ruta</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" >I.Oficina</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" >I.Ruta</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" >I.Ruta Pie</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexturno') }}" >I.Turno</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoauto') }}" >I.Placa</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" >I.Placa Pie</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Filtros de Ingresos por Placa</h4>
+                <h4 class="card-title text-center mb-4">Ingresos por Placa</h4>
                 <form id="filtros-auto-form" class="row g-3">
                     <!-- Selector de Autos Múltiples -->
                     <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
@@ -39,6 +40,7 @@
                     <div class="col-md-6">
                         <label for="servicio" class="form-label">Tipo Servicio:</label>
                         <select id="servicio" name="servicio" class="form-select">
+                            <option value="">Total</option>
                             <option value="SPI">SPI</option>
                             <option value="SPP">SPP</option>
                         </select>
@@ -59,6 +61,9 @@
             </div>
             <div class="col-md-12 text-center mt-3">
                 <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
+            </div>
+            <div class="text-center mt-4">
+                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -146,18 +151,6 @@
             responsive: true,
         maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
         plugins: {
-            title: {
-                display: true, // Habilitar el título
-                text: 'Importe por Placa', // Título inicial
-                font: {
-                    size: 20, // Tamaño de fuente
-                    weight: 'bold' // Grosor de fuente
-                },
-                padding: {
-                    top: 10, // Espaciado superior
-                    bottom: 30 // Espaciado inferior
-                }
-            },
             legend: {
                     display: true,
                     position: 'top',
@@ -185,6 +178,12 @@
                     },
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        autoSkip: true, // Activar el salto automático de etiquetas
+                        maxTicksLimit: 7, // Limitar a 7 etiquetas como máximo
+                        maxRotation: 0, // Sin rotación para las etiquetas
+                        minRotation: 0 // Sin rotación para las etiquetas
                     }
                 },
                 y: {
@@ -215,6 +214,8 @@
     graficoAuto.data.datasets = [];
     graficoAuto.update();
     document.getElementById('montos').innerHTML = '';
+    document.getElementById('montoTotal').textContent = 0;
+
     });
 
     document.getElementById('filtros-auto-form').addEventListener('submit', function (event) {
@@ -282,6 +283,7 @@
     .then(data => {
         // Si no hay datos, retornar
         console.log('Datos recibidos:', data);
+        document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (!data.autos || data.autos.length === 0) {
             return;
         }

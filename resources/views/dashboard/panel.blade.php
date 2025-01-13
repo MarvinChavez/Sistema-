@@ -7,10 +7,11 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm p-4">
-                <h4 class="card-title text-center mb-4">Filtros de Ingresos</h4>
+                <h4 class="card-title text-center mb-4">Ingresos totales</h4>
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
                         <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" id="btn-ruta">I.Oficina</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" id="btn-ruta">I.Ruta</a>
                         <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" id="btn-auto">I.Ruta Pie</a>
@@ -87,124 +88,6 @@
 <script>
     let ctx = document.getElementById('graficoIngresos').getContext('2d');
     let graficoIngresos;
-   
-    function filtrarhoy() {
-    let servicio = document.getElementById('servicio').value;
-
-    fetch('{{ route("grafico.hoy") }}', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    },
-    body: JSON.stringify({
-        servicio: servicio  // Incluir el parámetro servicio en la solicitud
-    })
-})
-.then(response => response.json())
-.then(data => {
-    console.log('Datos recibidos:', data);
-    graficoIngresos = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: data.labels, // Eje Y: Rutas
-        datasets: [{
-            data: data.data, // Eje X: Monto
-            backgroundColor: 'rgba(75, 192, 192, 0.6)', // Colores neón
-            borderColor: 'rgba(75, 192, 192, 1)', // Bordes
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true, // Habilitar respuesta dinámica al tamaño del contenedor
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
-        indexAxis: 'y', // Orientación horizontal
-        plugins: {
-            title: {
-                display: true, // Habilitar el título
-                text: 'Importe del día', // Título inicial
-                font: {
-                    size: 20, // Tamaño de fuente
-                    weight: 'bold' // Grosor de fuente
-                },
-                padding: {
-                    top: 10, // Espaciado superior
-                    bottom: 30 // Espaciado inferior
-                }
-            },
-            tooltip: {
-                enabled: true // Habilitar tooltips
-            },
-            legend: {
-                display: false // Ocultar leyenda si no es necesaria
-            },
-            datalabels: {
-                anchor: 'end',
-                align: 'right',
-                formatter: (value) => {
-                    const formatter = new Intl.NumberFormat('es-PE', {
-                        style: 'currency',
-                        currency: 'PEN', // Moneda en Soles
-                        minimumFractionDigits: 0 // Sin decimales
-                    });
-                    return formatter.format(value); // Formatear con separador de miles y símbolo de moneda
-                },
-                color: '#000', // Opcional: Cambia el color de las etiquetas
-                font: {
-                    size: 12, // Opcional: Ajusta el tamaño de la fuente
-                    weight: 'bold' // Opcional: Cambia el grosor de la fuente
-                }
-            }
-        },
-        scales: {
-            x: {
-                        beginAtZero: true,
-                        min: 0,
-                        max: 20000,
-                        grid: {
-                            display: false,
-                        },
-                        ticks: {
-                            stepSize: 2000,
-                        }
-                    },
-            y: {
-                grid: {
-                    display: false // Ocultar líneas de cuadrícula
-                },
-                ticks: {
-                    autoSkip: false, // Mostrar todas las etiquetas
-                    maxRotation: 0,  // Sin rotación para etiquetas
-                    minRotation: 0,
-                    padding: 10 // Separación entre etiquetas del eje Y y las barras
-                }
-            }
-        },
-        layout: {
-            padding: 20 // Espaciado alrededor del gráfico
-        },
-        elements: {
-            bar: {
-                barPercentage: 0.5, // Ancho de las barras
-                categoryPercentage: 0.7 // Espacio entre categorías
-            }
-        }
-    },
-    plugins: [ChartDataLabels] // Asegúrate de incluir ChartDataLabels
-});
-
-
-        // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
-    });
-}
-
-    document.addEventListener('DOMContentLoaded', function () {
-        filtrarhoy();
-    });
     // Función para enviar los datos de filtrado y actualizar la gráfica
     function filtrarDatos(fechaInicio, fechaFin) {
     // Obtener el valor del tipo de servicio seleccionado
@@ -239,7 +122,6 @@
         data: {
             labels: [],
             datasets: [{
-                label: 'Importe total de ingresos',
                 data: [],
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -253,29 +135,10 @@
             responsive: true,
             maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
             plugins: {
-                title: {
-                display: true, // Habilitar el título
-                text: 'Importe Total', // Título inicial
-                font: {
-                    size: 20, // Tamaño de fuente
-                    weight: 'bold' // Grosor de fuente
-                },
-                padding: {
-                    top: 10, // Espaciado superior
-                    bottom: 30 // Espaciado inferior
-                }
-            },
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14
-                        }
+                    legend: {
+                        display: false // Ocultar la leyenda
                     }
-                }
-            },
+                },
             scales: {
                 x: {
                     title: {
@@ -288,6 +151,12 @@
                     },
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        autoSkip: true, // Activar el salto automático de etiquetas
+                        maxTicksLimit: 7, // Limitar a 7 etiquetas como máximo
+                        maxRotation: 0, // Sin rotación para las etiquetas
+                        minRotation: 0 // Sin rotación para las etiquetas
                     }
                 },
                 y: {

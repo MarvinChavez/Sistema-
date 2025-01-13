@@ -31,7 +31,10 @@ Route::middleware('auth')->group(function () {
     // web.php
     Route::get('/grafico', [IngresoController::class, 'index2'])->name('grafico.index2');
     Route::post('/grafico/filtros', [IngresoController::class, 'filtrarIngresos'])->name('grafico.filtrar');
-    Route::post('/graficohoy', [IngresoController::class, 'ingresosPorRutaHoy'])->name('grafico.hoy');
+    Route::post('/graficobarRuta', [IngresoController::class, 'ingresosPorRutaHoy'])->name('grafico.barRuta');
+    Route::post('/graficobarOficina', [IngresoController::class, 'ingresosPorOficinaHoy'])->name('grafico.barOficina');
+    Route::post('/graficobarTurno', [IngresoController::class, 'ingresosPorTurnoHoy'])->name('grafico.barTurno');
+
     Route::get('/{id}/edit', [IngresoController::class, 'edit'])->name('ingresos.edit');
     Route::put('/{id}', [IngresoController::class, 'update'])->name('ingresos.update');
     Route::delete('/{id}/eliminar', [IngresoController::class, 'delete'])->name('ingresos.delete');
@@ -42,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/grafoficina', [IngresoController::class, 'indexOficina'])->name('graficooficina');
     Route::post('/filtrooficina', [IngresoController::class, 'filtrarOficina'])->name('filtraroficina');
     Route::get('/grafruta', [IngresoController::class, 'indexRuta'])->name('graficoruta');
+    Route::get('/grafdia', [IngresoController::class, 'indexDia'])->name('graficoDia');
     Route::post('/filtroruta', [IngresoController::class, 'filtrarRuta'])->name('filtrarruta');
     Route::get('/turnos/nopie', [IngresoController::class, 'indexturno'])->name('indexturno');
 

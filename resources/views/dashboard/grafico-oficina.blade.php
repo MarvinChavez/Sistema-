@@ -11,16 +11,17 @@
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" id="btn-ciudad">I.Oficina</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" id="btn-ciudad">I.Ruta</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" id="btn-auto">I.Ruta Pie</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexturno') }}" id="btn-ciudad">I.Turno</a>
-                        <a class="btn btn-light me-1" href="{{ route('graficoauto') }}" id="btn-auto">I.Placa</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" id="btn-auto">I.Placa Pie</a>
-                        <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}" id="btn-pie">I. Placa-Ruta</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" >I.Oficina</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" >I.Ruta</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" >I.Ruta Pie</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexturno') }}" >I.Turno</a>
+                        <a class="btn btn-light me-1" href="{{ route('graficoauto') }}" >I.Placa</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexautopie') }}" >I.Placa Pie</a>
+                        <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Filtros de Ingresos por Oficina</h4>
+                <h4 class="card-title text-center mb-4">Ingresos por Oficina</h4>
                 <form id="filtros-ciudad-form" class="row g-3">
                         <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
                             <label class="form-label">Oficina:</label>
@@ -224,18 +225,6 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
         responsive: true,
         maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
         plugins: {
-            title: {
-                display: true,
-                text: 'Importe por Oficina', 
-                font: {
-                    size: 20, // Tamaño de fuente
-                    weight: 'bold' 
-                },
-                padding: {
-                    top: 10, // Espaciado superior
-                    bottom: 30 // Espaciado inferior
-                }
-            },
             legend: {
                     display: true,
                     position: 'top',
@@ -263,6 +252,12 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
                     },
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        autoSkip: true, // Activar el salto automático de etiquetas
+                        maxTicksLimit: 7, // Limitar a 7 etiquetas como máximo
+                        maxRotation: 0, // Sin rotación para las etiquetas
+                        minRotation: 0 // Sin rotación para las etiquetas
                     }
                 },
                 y: {
