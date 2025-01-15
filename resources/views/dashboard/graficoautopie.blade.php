@@ -9,8 +9,8 @@
             <div class="card shadow-sm p-4">
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
-                        <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
+                        <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
                         <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" >I.Oficina</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" >I.Ruta</a>
                         <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" >I.Ruta Pie</a>
@@ -20,7 +20,7 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Gráfico de Ingresos por Placa</h4>
+                <h4 class="card-title text-center mb-4">Ingresos por Placa</h4>
                 
                 <!-- Selección de rango de fechas -->
                 <div class="row justify-content-center mb-4">
@@ -33,15 +33,18 @@
                         <input type="date" id="fechaFin" class="form-control">
                     </div>
                 </div>
-
+                <div class="text-center mt-4">
+                    <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                </div>
                 <div class="row">
                     <!-- Lista de autos -->
-                    <div class="d-flex" style="top: -30px; left: 10px; z-index: 10;">
+                    <div class="d-flex justify-content-center mb-4">
                         <button class="btn btn-light mx-1 filtro-fecha" data-filtro="dia">Día</button>
                         <button class="btn btn-light mx-1 filtro-fecha" data-filtro="semana">Semana</button>
                         <button class="btn btn-light mx-1 filtro-fecha" data-filtro="mes">Mes</button>
                         <button class="btn btn-light mx-1 filtro-fecha" data-filtro="año">Año</button>
                     </div>
+    
     
                     <div class="col-md-4">
                         <h5>Selecciona placa:</h5>
@@ -112,27 +115,26 @@
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            let label = context.label || '';
-                            const value = context.raw;
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(2) + '%' : '0%';
-                            if (label) {
-                                label += ': ';
-                            }
-                            label += `${value} S/.\n(${percentage})`; // Añadir el porcentaje al tooltip
-                            return label;
+                        let label = context.label || '';
+                        const value = context.raw.toLocaleString('en-US'); // Formatear con comas
+                        if (label) {
+                            label += ': ';
                         }
+                        label += `S/. ${value} `; // Mostrar valor formateado
+                        return label;
+                    }
                     }
                 },
                 // Mostrar porcentaje dentro del gráfico
                 datalabels: {
                     formatter: (value, context) => {
-                        const total = context.chart.data.datasets[0].data.reduce((acc, curr) => acc + curr, 0);
-                        if (total === 0) return '0%'; // Evitar NaN
-                        const percentage = ((value / total) * 100).toFixed(2) + '%';
-                        return percentage;
-                    },
-                    color: '#fff',
+                    return `S/. ${value.toLocaleString('en-US')}`; // Formatear con comas
+                },
+                color: '#fff',
+                font: {
+                    weight: 'bold',
+                }
+
                 }
             }
         },
@@ -232,8 +234,11 @@
     graficoPie.data.labels = data.map(item => item.placa);
     // Convierte total_monto a número
     graficoPie.data.datasets[0].data = data.map(item => parseFloat(item.total_monto));
+    const totalMonto = data.reduce((sum, item) => sum + parseFloat(item.total_monto), 0);
 
     graficoPie.update();
+    document.getElementById('montoTotal').innerText = `${totalMonto.toLocaleString('en-US')}`;
+
         })
         .catch(error => console.error('Error fetching data:', error));
     }

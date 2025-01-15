@@ -837,7 +837,8 @@ public function ingresosPorTurnoHoy(Request $request)
         return [
             'placa' => $resultado->auto->placa,
             'total_monto' => $resultado->total_monto,
-            'porcentaje' => number_format($porcentaje, 2) // Formato a dos decimales
+            'porcentaje' => number_format($porcentaje, 2),
+            'total_general' => number_format( $totalGeneral, 2)  // Formato a dos decimales
         ];
     });
 
@@ -873,8 +874,10 @@ public function ingresosPorRutas(Request $request)
             'rutainicial' => strtoupper(trim($resultado->ruta->ciudad_inicial)),
             'rutafinal' => strtoupper(trim($resultado->ruta->ciudad_final)),
             'total_monto' => $resultado->total_monto,
-            'porcentaje' => number_format($porcentaje, 2) // Formato a dos decimales
+            'porcentaje' => number_format($porcentaje, 2), // Formato a dos decimales
+            'total_general' => number_format( $totalGeneral, 2) 
         ];
+
     });
 
     return response()->json($data);

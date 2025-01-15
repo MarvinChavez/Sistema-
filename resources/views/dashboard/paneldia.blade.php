@@ -10,8 +10,8 @@
                 <h4 class="card-title text-center mb-4">Ingresos del día</h4>
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
-                        <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
+                        <a class="btn btn-light me-1" href="{{ route('grafico.index2') }}" id="btn-general">I.Total</a>
                         <a class="btn btn-light me-1" href="{{ route('graficooficina') }}" >I.Oficina</a>
                         <a class="btn btn-light me-1" href="{{ route('graficoruta') }}" >I.Ruta</a>
                         <a class="btn btn-light me-1" href="{{ route('indexrutapie') }}" >I.Ruta Pie</a>
