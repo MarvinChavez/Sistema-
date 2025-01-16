@@ -13,8 +13,8 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::factory()->create([
-            'name' => 'Admin',
+        Role::create([
+            'name' => 'Admin', // Crea directamente el rol sin usar Factory
         ]);
     }
 }

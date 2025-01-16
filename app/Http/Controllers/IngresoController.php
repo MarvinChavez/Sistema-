@@ -20,42 +20,52 @@ class IngresoController extends Controller
         return view('import_excel');
     }
     public function filtrarIngresos(Request $request)
-{
-    // Inicializar la consulta base
-    $query = DB::table('ingreso');
-
-    // Obtener los valores de fecha de inicio y fecha fin
-    $fechaInicio = $request->filled('fecha_inicio') ? $request->input('fecha_inicio') : null;
-    $fechaFin = $request->filled('fecha_fin') ? $request->input('fecha_fin') : date('Y-m-d');
-
-    // Filtrar por fecha si se proporciona `fecha_inicio`
-    if ($fechaInicio) {
-        $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
-    } else {
-        // Si no se especifica `fecha_inicio`, se filtra hasta `fecha_fin`
-        $query->where('fecha', '<=', $fechaFin);
+    {
+        // Initialize the base query
+        $query = DB::table('ingreso');
+    
+        // Get the start and end date values
+        $fechaInicio = $request->filled('fecha_inicio') ? $request->input('fecha_inicio') : null;
+        $fechaFin = $request->filled('fecha_fin') ? $request->input('fecha_fin') : date('Y-m-d');
+    
+        // Filter by date if `fecha_inicio` is provided
+        if ($fechaInicio) {
+            $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+        } else {
+            // If `fecha_inicio` is not specified, filter until `fecha_fin`
+            $query->where('fecha', '<=', $fechaFin);
+        }
+    
+        // Filter by service if `servicio` is provided
+        if ($request->filled('servicio') && $request->input('servicio') !== '') {
+            $servicio = trim($request->input('servicio'));  // Remove extra spaces
+            $query->where('servicio', '=', $servicio); // Filter by exact match on service
+        }
+    
+        // Select and group the income by date
+        $ingresos = $query->select(DB::raw('DATE(fecha) as fecha'), DB::raw('SUM(monto) as total'))
+            ->groupBy(DB::raw('DATE(fecha)'))
+            ->orderBy('fecha', 'asc')
+            ->get();
+    
+        // Calculate the total amount by summing the daily totals
+        $montoTotal = $ingresos->sum('total');
+    
+        // Format the income data
+        $ingresosFormateados = $ingresos->map(function($ingreso) {
+            return [
+                'fecha' => $ingreso->fecha,
+                'monto' => number_format($ingreso->total, 2, ',', '.')  // Format amount with commas and periods
+            ];
+        });
+    
+        // Return the JSON response with formatted data
+        return response()->json([
+            'ingresos' => $ingresosFormateados,
+            'montoTotal' => number_format($montoTotal, 2, ',', '.')  // Format total amount
+        ]);
     }
-
-    // Filtrar por servicio si se proporciona `servicio`
-    if ($request->filled('servicio') && $request->input('servicio') !== '') {
-        $servicio = trim($request->input('servicio'));  // Remover espacios en blanco
-        $query->where('servicio', '=', $servicio); // Filtrar donde el servicio sea igual al valor ingresado
-    }
-
-    // Seleccionar y agrupar ingresos por fecha
-    $ingresos = $query->select(DB::raw('DATE(fecha) as fecha'), DB::raw('SUM(monto) as total'))
-        ->groupBy(DB::raw('DATE(fecha)'))
-        ->orderBy('fecha', 'asc')
-        ->get();
-
-    // Calcular el monto total sumando los totales diarios
-    $montoTotal = $ingresos->sum('total');
-
-    return response()->json([
-        'ingresos' => $ingresos,
-        'montoTotal' => $montoTotal
-    ]);
-}
+    
 public function ingresosPorRutaHoy(Request $request)
 {
     // Obtener el día actual

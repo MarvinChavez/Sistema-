@@ -227,7 +227,27 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
                             size: 14
                         }
                     }
+                },
+                tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        // Formatear el valor del eje Y
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
+                        }
+                        return label;
+                    },
+                    title: function(context) {
+                        // Formatear la fecha para mostrar solo día y mes
+                        const fecha = context[0].parsed.x;
+                        return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
+                    }
                 }
+            }
         },
         scales: {
             x: {

@@ -85,6 +85,8 @@
         background-color: #f8f9fa;
     }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
 <script>
     let ctx = document.getElementById('graficoIngresos').getContext('2d');
     let graficoIngresos;
@@ -92,37 +94,35 @@
     function filtrarDatos(fechaInicio, fechaFin) {
     // Obtener el valor del tipo de servicio seleccionado
     let servicio = document.getElementById('servicio').value;
-    if (graficoIngresos) {
-    graficoIngresos.destroy(); // Destruir el gráfico anterior
-} 
     fetch('{{ route("grafico.filtrar") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            fecha_inicio: fechaInicio,
-            fecha_fin: fechaFin,
-            servicio: servicio  // Incluir el parámetro servicio en la solicitud
-        })
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify({
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+        servicio: servicio  // Incluir el parámetro servicio en la solicitud
     })
-    .then(response => response.json())
-    .then(data => {
-        // Ordenar los ingresos por fecha
-        let datosOrdenados = data.ingresos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-        let fechas = datosOrdenados.map(item => {
-        let fecha = new Date(item.fecha);
-        return fecha.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-        });
-        let montos = datosOrdenados.map(item => item.total);
-        
-        graficoIngresos = new Chart(ctx, {
+})
+.then(response => response.json())
+.then(data => {
+    // Extraemos las fechas y los montos de los ingresos
+    let fechas = data.ingresos.map(item => new Date(item.fecha));
+    let montos = data.ingresos.map(item => parseFloat(item.monto.replace(',', '.'))); // Convertimos el monto a número
+    
+    // Actualizamos el gráfico
+    if (graficoIngresos) {
+        graficoIngresos.destroy();  // Eliminamos el gráfico anterior
+    }
+    
+    graficoIngresos = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: fechas,
             datasets: [{
-                data: [],
+                data: montos,
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderWidth: 2,
@@ -135,12 +135,36 @@
             responsive: true,
             maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
             plugins: {
-                    legend: {
-                        display: false // Ocultar la leyenda
-                    }
+                legend: {
+                    display: false // Ocultar la leyenda
                 },
+                tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        // Formatear el valor del eje Y
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
+                        }
+                        return label;
+                    },
+                    title: function(context) {
+                        // Formatear la fecha para mostrar solo día y mes
+                        const fecha = context[0].parsed.x;
+                        return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
+                    }
+                }
+            }
+        },
             scales: {
                 x: {
+                type: 'time', // Configuración para tiempo
+                    time: {
+                        unit: 'day' // Unidad de tiempo: días
+                    },
                     title: {
                         display: true,
                         text: 'Fecha',
@@ -175,13 +199,11 @@
             }
         }
     });
-        // Actualizar los datos del gráfico
-        graficoIngresos.data.labels = fechas;
-        graficoIngresos.data.datasets[0].data = montos;
-        graficoIngresos.update();
+
 
         // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        let montoTotal = data.montoTotal;
+        document.getElementById('montoTotal').textContent = montoTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     });
 }
 
