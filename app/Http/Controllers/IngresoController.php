@@ -515,7 +515,7 @@ public function ingresosPorTurnoHoy(Request $request)
                             'monto' => $ultimoRegistro->total_monto
                         ]
                         : null,
-                    'total'=>$totalMontos
+                    'total' => number_format($totalMontos, 2, '.', ','),
                 ];
                 $totalGeneral += $totalMontos;
 
@@ -796,7 +796,7 @@ public function ingresosPorTurnoHoy(Request $request)
                         'monto' => $ultimoRegistro->total_monto
                     ]
                     : null,
-                'total'=>$totalMontos
+                'total' => number_format($totalMontos, 2, '.', ','),
             ];
             $totalGeneral += $totalMontos;
         }
