@@ -72,8 +72,8 @@
                     <button class="btn btn-light" id="btn-año">Año</button>
                 </div>
                 <div class="card shadow-sm mt-12 container-fluid">
-                    <div class="container-fluid" style="padding-top: 50px;width: 800px; height: 700px">
-                        <canvas id="graficoAuto" style="width: auto; height: auto;"></canvas>
+                    <div style="padding-top: 50px;width: auto; height: 700px">
+                        <canvas id="graficoAuto" style="width: 100%; height: auto;"></canvas>
                     </div>
                 </div>
                 <!-- Contenedor para mostrar los montos promedio -->
