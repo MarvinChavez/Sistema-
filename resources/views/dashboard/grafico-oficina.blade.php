@@ -87,8 +87,11 @@
             <div class="col-md-12 text-center mt-3">
                 <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
             </div>
-            <div class="text-center mt-4">
+
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+                <h2>INGRESOS POR PLACA</h2>
                 <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -199,8 +202,18 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
         return response.json();
     })
     .then(data => {
-        console.log('Datos recibidos:', data);
-        let todasLasFechas = [];
+        if (!data.ciudades || data.ciudades.length === 0) {
+    graficoRuta.data.labels = []; 
+    graficoRuta.data.datasets = [{ 
+        label: 'No hay datos disponibles',
+        data: [],
+        borderColor: 'rgba(0,0,0,0)',  
+        backgroundColor: 'rgba(0,0,0,0)', 
+        fill: false
+    }];
+    graficoRuta.update();  // Actualizar el gráfico para reflejar los cambios
+    return;  // Terminar la ejecución sin continuar con más lógica
+}        let todasLasFechas = [];
         document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         // Extraer todas las fechas de todos los autos
         data.ciudades.forEach(ciudad => {
@@ -338,6 +351,8 @@ document.getElementById('btn-limpiar').addEventListener('click', function () {
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
     // Limpiar el gráfico y los montos promedio
+    infoIngresos.style.display = 'none'; // Oculta el div    
+
     graficoRuta.data.labels = [];
     graficoRuta.data.datasets = [];
     graficoRuta.update();
@@ -351,11 +366,17 @@ document.getElementById('filtros-ciudad-form').addEventListener('submit', functi
     let ciudadesSeleccionadas = Array.from(document.querySelectorAll('input[name="ciudades[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_inicio = document.getElementById('fecha_inicio').value;
     let fecha_fin = document.getElementById('fecha_fin').value;
+let fecha_inicio2 = new Date(fecha_inicio);
+    let fecha_fin2 = new Date(fecha_fin);
 
+    // Sumamos un día a las fechas
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
+    fecha_fin2.setDate(fecha_fin2.getDate() + 1);
     // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
     // Llamada a la función para filtrar datos
+    actualizarRangoFechas(fecha_inicio2, fecha_fin2)
     fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin);
 });
     document.getElementById('btn-semana').addEventListener('click', function () {
@@ -365,8 +386,12 @@ document.getElementById('filtros-ciudad-form').addEventListener('submit', functi
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
         // Ocultar filtros y botón "Filtrar"
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
+
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
+
         fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -376,9 +401,14 @@ document.getElementById('filtros-ciudad-form').addEventListener('submit', functi
         fecha_inicio.setMonth(fecha_inicio.getMonth() - 1);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
+        document.getElementById('montos').innerHTML = '';
+
         // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    actualizarRangoFechas(fecha_inicio, fecha_fin);
+
         fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -389,6 +419,8 @@ document.getElementById('filtros-ciudad-form').addEventListener('submit', functi
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
         // Ocultar filtros y botón "Filtrar"
+        document.getElementById('montos').innerHTML = '';
+
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
         fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
@@ -472,7 +504,14 @@ function mostrarMontos(ciudades) {
         index++;
     });
 }
+function actualizarRangoFechas(fecha_inicio, fecha_fin) {
+    const rangoFechas = document.getElementById('rangoFechas');
+    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
+    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+    rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
+    infoIngresos.style.display = 'block';
 
+}
 
 </script>
 

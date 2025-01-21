@@ -89,8 +89,10 @@
                 <div class="col-md-12 text-center mt-3">
                     <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
                 </div>
-                <div class="text-center mt-4">
+                <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+                    <h2>INGRESOS POR TURNO</h2>
                     <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                    <h5 id="rangoFechas">Rango de Fechas: - </h5>
                 </div>
                 <!-- Contenedor para el gráfico de líneas -->
                 <div class="position-relative mt-4">
@@ -100,8 +102,8 @@
                         <button class="btn btn-light" id="btn-año">Año</button>
                     </div>
                     <div class="card shadow-sm mt-12 container-fluid">
-                        <div class="container-fluid" style="padding-top: 50px;width: 800px; height: 700px">
-                            <canvas id="graficoTurno" style="width: auto; height: auto;"></canvas>
+                        <div style="padding-top: 50px;width: auto; height: 700px">
+                            <canvas id="graficoTurno" style="width: 100%; height: auto;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -214,6 +216,8 @@ document.getElementById('servicio').addEventListener('change', function() {
 });
     let ctxTurno = document.getElementById('graficoTurno').getContext('2d');
     let graficoTurno;
+    
+
     graficoTurno = new Chart(ctxTurno, {
         type: 'line',
         data: {
@@ -296,13 +300,12 @@ document.getElementById('servicio').addEventListener('change', function() {
     },
     });
     document.getElementById('btn-limpiar').addEventListener('click', function () {
-         // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
-    // Limpiar el gráfico y los montos promedio
     graficoTurno.data.labels = [];
     graficoTurno.data.datasets = [];
     graficoTurno.update();
+    infoIngresos.style.display = 'none'; // Oculta el div    
     document.getElementById('montos').innerHTML = '';
     document.getElementById('montoTotal').textContent = 0;
 
@@ -312,10 +315,18 @@ document.getElementById('servicio').addEventListener('change', function() {
         let autosSeleccionados = Array.from(document.querySelectorAll('input[name="turnoCheckboxContainer[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = document.getElementById('fechaInicio').value;
         let fecha_fin = document.getElementById('fechaFin').value;
+        let fecha_inicio2 = new Date(fecha_inicio);
+    let fecha_fin2 = new Date(fecha_fin);
+
+    // Sumamos un día a las fechas
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
+    fecha_fin2.setDate(fecha_fin2.getDate() + 1);
     // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
     // Llamada a la función para filtrar datos
+    
+    actualizarRangoFechas(fecha_inicio2, fecha_fin2)
         fetchTurnoData(autosSeleccionados, fecha_inicio, fecha_fin);
     });
     document.getElementById('btn-semana').addEventListener('click', function () {
@@ -324,6 +335,10 @@ document.getElementById('servicio').addEventListener('change', function() {
         fecha_inicio.setDate(fecha_inicio.getDate() - 7);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
+        document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
 
         fetchTurnoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
@@ -336,6 +351,10 @@ document.getElementById('servicio').addEventListener('change', function() {
     // Para el cálculo de un mes atrás
     let fecha_inicio = new Date(fecha_fin);
     fecha_inicio.setMonth(fecha_inicio.getMonth() - 1);
+    actualizarRangoFechas(fecha_inicio, fecha_fin);
+    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
 
     fetchTurnoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
 });
@@ -346,6 +365,10 @@ document.getElementById('servicio').addEventListener('change', function() {
         fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
+        document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
+    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
 
         fetchTurnoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
@@ -373,7 +396,16 @@ document.getElementById('servicio').addEventListener('change', function() {
         document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 // Si no hay datos, retornar
 if (!data.turnos || data.turnos.length === 0) {
-    return;
+    graficoTurno.data.labels = [];  // Vaciar las etiquetas
+    graficoTurno.data.datasets = [{  // Vaciar los datasets
+        label: 'No hay datos disponibles',
+        data: [],
+        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
+        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
+        fill: false
+    }];
+    graficoTurno.update();  // Actualizar el gráfico para reflejar los cambios
+    return;  // Terminar la ejecución sin continuar con más lógica
 }
 
 let todasLasFechas = [];
@@ -436,7 +468,7 @@ function mostrarMontosPromedio(turnos) {
         card.style.padding = '2px'; // Reducir padding entre los cards
         card.innerHTML = `
             <div class="card card-promedio" style="background-color: ${generarColor(index)};">
-                <p style="font-size: 21px; color: black; font-family: Georgia, serif;">
+                <p style="font-size: 16px; color: black; font-family: Georgia, serif;">
                     <span style="font-size: 12px;">S/.</span> ${Math.round(monto_promedio).toLocaleString('en-US')}
                 </p>
             </div>
@@ -465,7 +497,7 @@ function mostrarMontos(turnos) {
         card.innerHTML = `
             <div class="card card-promedio2" style="background-color: ${generarColor(index)};">
                 <p style="font-size: 13px; color: black; font-family: Georgia, serif;">${fecha}</p>
-                <p style="font-size: 20px; color: black; font-family: Georgia, serif;">
+                <p style="font-size: 15px; color: black; font-family: Georgia, serif;">
                     <span style="font-size: 12px;">S/.</span> ${Math.round(monto).toLocaleString('en-US')}
                 </p>
             </div>`;
@@ -500,5 +532,14 @@ function mostrarMontos(turnos) {
 
     return neonColors[index % neonColors.length]; // Ciclo a través de los colores
     }
+    function actualizarRangoFechas(fecha_inicio, fecha_fin) {
+    const rangoFechas = document.getElementById('rangoFechas');
+    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
+    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+    rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
+    infoIngresos.style.display = 'block';
+
+}
+
 </script>
 @endsection

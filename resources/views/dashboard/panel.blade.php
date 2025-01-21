@@ -108,10 +108,22 @@
 })
 .then(response => response.json())
 .then(data => {
+    console.log('Datos recibidos:', data);
+
     // Extraemos las fechas y los montos de los ingresos
-    let fechas = data.ingresos.map(item => new Date(item.fecha));
-    let montos = data.ingresos.map(item => parseFloat(item.monto.replace(',', '.'))); // Convertimos el monto a número
-    
+    const fechas = data.ingresos.map(item => {
+    const fechaObj = new Date(item.fecha); // Convertir a objeto Date
+    fechaObj.setDate(fechaObj.getDate() + 1); // Sumar un día
+    return fechaObj;
+});
+
+// Formateamos las fechas de forma adecuada para la visualización
+
+const montosFormateados = data.ingresos.map(item => {
+    // Convertir el monto en número y luego formatearlo con separadores de miles
+    const monto = parseFloat(item.monto.replace('.', '').replace(',', '.')); // Asegurarse de que el monto es numérico
+    return monto; // Usar el valor numérico directamente para que Chart.js lo maneje correctamente
+});
     // Actualizamos el gráfico
     if (graficoIngresos) {
         graficoIngresos.destroy();  // Eliminamos el gráfico anterior
@@ -120,9 +132,9 @@
     graficoIngresos = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: fechas,
+            labels: fechas ,
             datasets: [{
-                data: montos,
+                data: montosFormateados,
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderWidth: 2,
@@ -202,8 +214,10 @@
 
 
         // Actualizar el monto total
-        let montoTotal = data.montoTotal;
-        document.getElementById('montoTotal').textContent = montoTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        });
     });
 }
 

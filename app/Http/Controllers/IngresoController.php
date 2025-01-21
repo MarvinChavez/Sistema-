@@ -62,7 +62,7 @@ class IngresoController extends Controller
         // Return the JSON response with formatted data
         return response()->json([
             'ingresos' => $ingresosFormateados,
-            'montoTotal' => number_format($montoTotal, 2, ',', '.')  // Format total amount
+            'montoTotal' => number_format($montoTotal, 2, '.', ',')  // Format total amount
         ]);
     }
     

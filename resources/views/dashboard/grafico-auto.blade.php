@@ -22,6 +22,7 @@
                     </div>
                 </div>
                 <h4 class="card-title text-center mb-4">Ingresos por Placa</h4>
+
                 <form id="filtros-auto-form" class="row g-3">
                     <!-- Selector de Autos Múltiples -->
                     <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
@@ -62,9 +63,12 @@
             <div class="col-md-12 text-center mt-3">
                 <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
             </div>
-            <div class="text-center mt-4">
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+                <h2>INGRESOS POR PLACA</h2>
                 <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
+
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
                     <button class="btn btn-light me-1" id="btn-semana">Semana</button>
@@ -140,6 +144,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
 <script>
+
     const ctxAuto = document.getElementById('graficoAuto').getContext('2d');
     const graficoAuto = new Chart(ctxAuto, {
         type: 'line',
@@ -227,7 +232,7 @@
          // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
-
+    infoIngresos.style.display = 'none'; // Oculta el div    
     // Limpiar los campos de filtros
     // Limpiar el gráfico y los montos promedio
     graficoAuto.data.labels = [];
@@ -243,45 +248,71 @@
         let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
         let fecha_inicio = document.getElementById('fecha_inicio').value;
         let fecha_fin = document.getElementById('fecha_fin').value;
+        // Convertimos los valores de fecha en objetos Date
+    let fecha_inicio2 = new Date(fecha_inicio);
+    let fecha_fin2 = new Date(fecha_fin);
+
+    // Sumamos un día a las fechas
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
+    fecha_fin2.setDate(fecha_fin2.getDate() + 1);
     // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-
     // Llamada a la función para filtrar datos
+    actualizarRangoFechas(fecha_inicio2, fecha_fin2)
+
         fetchAutoData(autosSeleccionados, fecha_inicio, fecha_fin);
-    });
-
-    document.getElementById('btn-semana').addEventListener('click', function () {
-        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
-        let fecha_inicio = new Date();
-        fecha_inicio.setDate(fecha_inicio.getDate() - 7);
-        let fecha_fin = new Date();
-        fecha_fin.setHours(23, 59, 59);
-
-        fetchAutoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
     document.getElementById('btn-mes').addEventListener('click', function () {
     let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_fin = new Date();
-    fecha_fin.setHours(23, 59, 59);
+    fecha_fin.setHours(23, 59, 59); // Fecha de fin al final del día
 
     // Para el cálculo de un mes atrás
     let fecha_inicio = new Date(fecha_fin);
-    fecha_inicio.setMonth(fecha_inicio.getMonth() - 1);
+    fecha_inicio.setMonth(fecha_inicio.getMonth() - 1); // Fecha de inicio un mes atrás
 
+    // Mostrar el rango de fechas del mes
+    actualizarRangoFechas(fecha_inicio, fecha_fin);
+    document.getElementById('filtros-container').classList.remove('d-none');
+    document.querySelector('button[type="submit"]').classList.remove('d-none');
+    document.getElementById('montos').innerHTML = '';
+    // Llamar a la función para obtener los datos de los autos
     fetchAutoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
 });
 
-    document.getElementById('btn-año').addEventListener('click', function () {
-        let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
-        let fecha_inicio = new Date();
-        fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1);
-        let fecha_fin = new Date();
-        fecha_fin.setHours(23, 59, 59);
+// Botón del año
+document.getElementById('btn-año').addEventListener('click', function () {
+    let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
+    let fecha_inicio = new Date();
+    fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1); // Fecha de inicio hace un año
+    let fecha_fin = new Date();
+    fecha_fin.setHours(23, 59, 59); // Fecha de fin al final del día
+    document.getElementById('filtros-container').classList.remove('d-none');
+    document.querySelector('button[type="submit"]').classList.remove('d-none');
+    // Mostrar el rango de fechas del año
+    actualizarRangoFechas(fecha_inicio, fecha_fin);
+    document.getElementById('montos').innerHTML = '';
+    // Llamar a la función para obtener los datos de los autos
+    fetchAutoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
+});
 
-        fetchAutoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
-    });
+document.getElementById('btn-semana').addEventListener('click', function () {
+    let autosSeleccionados = Array.from(document.querySelectorAll('input[name="autos[]"]:checked')).map(checkbox => checkbox.value);
+    let fecha_inicio = new Date();
+    fecha_inicio.setDate(fecha_inicio.getDate() - 7); // Fecha de inicio 7 días atrás
+    let fecha_fin = new Date();
+    fecha_fin.setHours(23, 59, 59); // Fecha de fin al final del día
+    document.getElementById('filtros-container').classList.remove('d-none');
+    document.querySelector('button[type="submit"]').classList.remove('d-none');
+    // Mostrar el rango de fechas de la semana
+    actualizarRangoFechas(fecha_inicio, fecha_fin);
+    document.getElementById('montos').innerHTML = '';
+
+    // Llamar a la función para obtener los datos de los autos
+    fetchAutoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
+});
    
     function fetchAutoData(autosSeleccionados, fecha_inicio, fecha_fin) {
     let servicio = document.getElementById('servicio').value;
@@ -305,7 +336,16 @@
         console.log('Datos recibidos:', data);
         document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (!data.autos || data.autos.length === 0) {
-            return;
+            graficoAuto.data.labels = [];  // Vaciar las etiquetas
+            graficoAuto.data.datasets = [{  // Vaciar los datasets
+        label: 'No hay datos disponibles',
+        data: [],
+        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
+        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
+        fill: false
+    }];
+    graficoAuto.update();  // Actualizar el gráfico para reflejar los cambios
+    return;  // Terminar la ejecución sin continuar con más lógica
         }
 
         let todasLasFechas = [];
@@ -435,6 +475,13 @@ function mostrarMontos(autos) {
         index++;
     });
 }
+function actualizarRangoFechas(fecha_inicio, fecha_fin) {
+    const rangoFechas = document.getElementById('rangoFechas');
+    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
+    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+    rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
+    infoIngresos.style.display = 'block';
 
+}
 </script>
 @endsection

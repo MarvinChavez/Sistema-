@@ -79,8 +79,10 @@
             <div class="col-md-12 text-center mt-3">
                 <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
             </div>
-            <div class="text-center mt-4">
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+                <h2>INGRESOS POR RUTA</h2>
                 <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -192,6 +194,18 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
     })
     .then(data => {
         console.log('Datos recibidos:', data);
+        if (!data.rutas || data.rutas.length === 0) {
+            graficoRuta.data.labels = [];  // Vaciar las etiquetas
+            graficoRuta.data.datasets = [{  // Vaciar los datasets
+        label: 'No hay datos disponibles',
+        data: [],
+        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
+        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
+        fill: false
+    }];
+    graficoRuta.update();  // Actualizar el gráfico para reflejar los cambios
+    return;  // Terminar la ejecución sin continuar con más lógica
+}
         document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         let todasLasFechas = [];
         
@@ -329,6 +343,8 @@ document.getElementById('btn-limpiar').addEventListener('click', function () {
     graficoRuta.data.labels = [];
     graficoRuta.data.datasets = [];
     graficoRuta.update();
+    infoIngresos.style.display = 'none'; // Oculta el div    
+
     document.getElementById('montos').innerHTML = '';
     document.getElementById('montoTotal').textContent = 0;
 
@@ -340,11 +356,17 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
     let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_inicio = document.getElementById('fecha_inicio').value;
     let fecha_fin = document.getElementById('fecha_fin').value;
+    let fecha_inicio2 = new Date(fecha_inicio);
+    let fecha_fin2 = new Date(fecha_fin);
 
+    // Sumamos un día a las fechas
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
+    fecha_fin2.setDate(fecha_fin2.getDate() + 1);
     // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
     // Llamada a la función para filtrar datos
+    actualizarRangoFechas(fecha_inicio2, fecha_fin2)
     fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin);
 });
     document.getElementById('btn-semana').addEventListener('click', function () {
@@ -354,8 +376,12 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
         // Ocultar filtros y botón "Filtrar"
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
+
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
+
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -366,8 +392,12 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
         // Ocultar filtros y botón "Filtrar"
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
+
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
+
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -377,9 +407,12 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         fecha_inicio.setFullYear(fecha_inicio.getFullYear() - 1);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
+        actualizarRangoFechas(fecha_inicio, fecha_fin);
         // Ocultar filtros y botón "Filtrar"
     document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
     document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('montos').innerHTML = '';
+
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -423,7 +456,7 @@ function mostrarMontosPromedio(rutas) {
         card.style.padding = '2px'; // Reducir padding entre los cards
         card.innerHTML = `
             <div class="card card-promedio" style="background-color: ${getRandomColor(index)};">
-                <p style="font-size: 21px; color: black; font-family: Georgia, serif;">
+                <p style="font-size: 16px; color: black; font-family: Georgia, serif;">
                     <span style="font-size: 12px;">S/.</span> ${Math.round(monto_promedio).toLocaleString('en-US')}
                 </p>
             </div>
@@ -452,7 +485,7 @@ function mostrarMontos(rutas) {
         card.innerHTML = `
             <div class="card card-promedio2" style="background-color: ${getRandomColor(index)};">
                 <p style="font-size: 13px; color: black; font-family: Georgia, serif;">${fecha}</p>
-                <p style="font-size: 20px; color: black; font-family: Georgia, serif;">
+                <p style="font-size: 15px; color: black; font-family: Georgia, serif;">
                     <span style="font-size: 12px;">S/.</span> ${Math.round(monto).toLocaleString('en-US')}
                 </p>
             </div>`;
@@ -461,7 +494,14 @@ function mostrarMontos(rutas) {
         index++;
     });
 }
+function actualizarRangoFechas(fecha_inicio, fecha_fin) {
+    const rangoFechas = document.getElementById('rangoFechas');
+    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
+    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+    rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
+    infoIngresos.style.display = 'block';
 
+}
 
 </script>
 
