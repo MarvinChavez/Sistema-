@@ -46,8 +46,10 @@
             </div>
 
             <!-- Monto Total -->
-            <div class="text-center mt-4">
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+                <h2>INGRESOS TOTALES</h2>
                 <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
 
             <!-- Gráfico -->
@@ -59,8 +61,8 @@
         <button class="btn btn-light" id="btn-año">Año</button>
     </div>
 
-    <div class="card shadow-sm mt-12 container-fluid">
-        <div style="padding-top: 50px;width: 800px; height: 700px">
+    <div class="card shadow-sm mt-12 container-fluid"  id="grafico-container">
+        <div style="padding-top: 50px;width: auto; height: 700px">
             <!-- Ajusta el canvas para que sea responsivo -->
             <canvas id="graficoIngresos" style="width: 100%; height: auto;"></canvas>
         </div>
@@ -226,6 +228,7 @@ const montosFormateados = data.ingresos.map(item => {
         let fechaFin = new Date();
         let fechaInicio = new Date();
         fechaInicio.setDate(fechaFin.getDate() - 7);
+        actualizarRangoFechas(fechaInicio, fechaFin);
         filtrarDatos(fechaInicio.toISOString().split('T')[0], fechaFin.toISOString().split('T')[0]);
     });
 
@@ -233,6 +236,7 @@ const montosFormateados = data.ingresos.map(item => {
         let fechaFin = new Date();
         let fechaInicio = new Date();
         fechaInicio.setMonth(fechaFin.getMonth() - 1);
+        actualizarRangoFechas(fechaInicio, fechaFin);
         filtrarDatos(fechaInicio.toISOString().split('T')[0], fechaFin.toISOString().split('T')[0]);
     });
 
@@ -240,6 +244,7 @@ const montosFormateados = data.ingresos.map(item => {
         let fechaFin = new Date();
         let fechaInicio = new Date();
         fechaInicio.setFullYear(fechaFin.getFullYear() - 1);
+        actualizarRangoFechas(fechaInicio, fechaFin);
         filtrarDatos(fechaInicio.toISOString().split('T')[0], fechaFin.toISOString().split('T')[0]);
     });
 
@@ -248,11 +253,29 @@ const montosFormateados = data.ingresos.map(item => {
         e.preventDefault();
         let fechaInicio = document.getElementById('fecha_inicio').value;
         let fechaFin = document.getElementById('fecha_fin').value;
+        let fecha_inicio2 = new Date(fechaInicio);
+    let fecha_fin2 = new Date(fechaFin);
+
+    // Sumamos un día a las fechas
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
+    fecha_fin2.setDate(fecha_fin2.getDate() + 1);
         filtrarDatos(fechaInicio, fechaFin);
+        actualizarRangoFechas(fecha_inicio2, fecha_fin2)
+
     });
     function cambiarTitulo(nuevoTitulo) {
     graficoIngresos.options.plugins.title.text = nuevoTitulo; // Cambiar el texto del título
     graficoIngresos.update(); // Actualizar el gráfico
 }
+function actualizarRangoFechas(fecha_inicio, fecha_fin) {
+    const rangoFechas = document.getElementById('rangoFechas');
+    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
+    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+    rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
+    infoIngresos.style.display = 'block';
+
+}
+
 </script>
+
 @endsection

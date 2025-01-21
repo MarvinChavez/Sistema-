@@ -89,7 +89,7 @@
             </div>
 
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
-                <h2>INGRESOS POR PLACA</h2>
+                <h2>INGRESOS POR OFICINA</h2>
                 <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>

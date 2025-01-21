@@ -47,7 +47,9 @@
                         </select>
                     </div>
                 </div>
-
+                <div class="text-center mt-4">
+                    <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                </div>
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
                         <button class="btn btn-light me-1" id="btn-semana">Semana</button>
@@ -157,7 +159,7 @@ google.charts.setOnLoadCallback(function() {
     .then(response => response.json())
     .then(data => {
         console.log('Datos recibidos:', data); // Verifica que los datos son correctos
-        
+        document.getElementById('montoTotal').innerText = `${data.total.toLocaleString('en-US')}`;
         // Formateamos los datos para que Google Charts los entienda
         const chartData = [['Ruta', 'Monto']]; // Datos para Google Charts
 
