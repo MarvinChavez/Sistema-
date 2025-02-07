@@ -36,7 +36,7 @@ class IngresoImport implements ToModel
             $horaturno = $row[12];
             $servicio = trim($row[11]);
             $monto = $row[15];
-            $fecha = \Carbon\Carbon::createFromFormat('d/m/Y', $row[10])->format('Y-m-d');
+            $fecha = $row[10];
             $serie = $row[5];
             $numero = $row[6];
             $pasajero = $row[9];
