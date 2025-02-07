@@ -20,8 +20,6 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Ingresos por Ruta</h4>
-
                 <!-- Selección de rango de fechas -->
                 <div class="row justify-content-center mb-4">
                     <div class="col-md-5">
@@ -34,8 +32,9 @@
                     </div>
                 </div>
 
-                <div class="text-center mt-4">
-                    <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <div class="text-center mt-4" id="infoIngresos"> <!-- Ocultado por defecto -->
+                    <h4 class="card-title text-center mb-4">Ingresos por Ruta</h4>
+                    <h5 id="infoTotales"></h5>
                 </div>
                 <!-- Filtros de Fecha en la parte superior (Opcionales) -->
                 <div class="d-flex justify-content-center mb-4">
@@ -96,61 +95,125 @@
 <script>
     // Configuración inicial del gráfico de pie
     let ctxPie = document.getElementById('graficoPie').getContext('2d');
-    let graficoPie = new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Porcentaje de Monto por Ruta',
-                data: [],
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.5)',
-                    'rgba(255, 99, 132, 0.5)',
-                    'rgba(255, 206, 86, 0.5)',
-                    'rgba(54, 162, 235, 0.5)',
-                    'rgba(153, 102, 255, 0.5)',
-                    'rgba(255, 159, 64, 0.5)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, 
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                        let label = context.label || '';
-                        const value = context.raw.toLocaleString('en-US'); // Formatear con comas
-                        if (label) {
-                            label += ': ';
-                        }
-                        label += `S/. ${value}`; // Mostrar valor formateado
-                        return label;
+let graficoPie = new Chart(ctxPie, {
+    type: 'pie',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Porcentaje de Monto por Auto',
+            data: [],
+            pasajeros: [],
+            porcentajes: [], // Nuevo campo para los porcentajes
+            backgroundColor: [
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(153, 102, 255, 0.5)',
+                'rgba(255, 159, 64, 0.5)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let index = context.dataIndex;
+                        let monto = context.raw.toLocaleString('en-US');
+                        let pasajeros = context.chart.data.datasets[0].pasajeros[index];
+                        let porcentaje = context.chart.data.datasets[0].porcentajes[index];
+
+                        return `S/. ${monto} - ${pasajeros} pasajeros (${porcentaje}%)`;
                     }
-                    }
-                },
-                // Mostrar porcentaje dentro del gráfico
-                datalabels: {
-                    formatter: (value, context) => {
-                    return `S/. ${value.toLocaleString('en-US')}`; // Formatear con comas
+                }
+            },
+            datalabels: {
+                formatter: (value, context) => {
+                    let index = context.dataIndex;
+                    let pasajeros = context.chart.data.datasets[0].pasajeros[index];
+                    let porcentaje = context.chart.data.datasets[0].porcentajes[index];
+                    return `S/. ${value.toLocaleString('en-US')}\n P(${pasajeros})`;
                 },
                 color: '#fff',
                 font: {
                     weight: 'bold',
                 }
-
-                }
             }
-        },
-        plugins: [ChartDataLabels] // Añadir plugin de etiquetas de datos
-    });
+        }
+    },
+    plugins: [ChartDataLabels]
+});
 
+    function updateChart() {
+        const selectedRutas = Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
+        const fechaInicio = fechaInicioInput.value || null;
+        const fechaFin = fechaFinInput.value || null;
+
+        if (selectedRutas.length === 0) {
+            graficoPie.data.labels = [];
+            graficoPie.data.datasets[0].data = [];
+            graficoPie.data.datasets[0].pasajeros = [];
+        graficoPie.data.datasets[0].porcentajes = [];
+        graficoPie.update();
+        return;
+        }
+
+        // Hacer la solicitud POST con los rutas seleccionados y el rango de fechas
+        fetch('{{ route("ingresosPorRutas") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                rutas: selectedRutas,
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Datos recibidos:', data);
+    ;
+            if (!data.length) {
+        // Si no hay datos, limpiar el gráfico
+        graficoPie.data.labels = [];
+        graficoPie.data.datasets[0].data = [];
+        graficoPie.data.datasets[0].pasajeros = [];
+            graficoPie.data.datasets[0].porcentajes = [];
+            graficoPie.update();
+            return;
+    }
+
+   // Calcular total para los porcentajes
+   const totalMonto = data.reduce((sum, item) => sum + parseFloat(item.total_monto), 0);
+        const totalPasajeros = data.reduce((sum, item) => sum + parseInt(item.total_pasajeros), 0);
+
+        graficoPie.data.labels = data.map(item => `${item.rutainicial} - ${item.rutafinal}`);
+        graficoPie.data.datasets[0].data = data.map(item => parseFloat(item.total_monto));
+        graficoPie.data.datasets[0].pasajeros = data.map(item => parseInt(item.total_pasajeros));
+        graficoPie.data.datasets[0].porcentajes = data.map(item => 
+            totalMonto > 0 ? ((item.total_monto / totalMonto) * 100).toFixed(2) : "0.00"
+        );
+
+        document.getElementById('infoTotales').innerHTML = 
+            `Importe Total: S/ ${totalMonto.toLocaleString('en-US')} 
+             P(${parseInt(totalPasajeros).toLocaleString('en-US')})`;
+
+        graficoPie.update();
+    })
+        .catch(error => console.error('Error fetching data:', error));
+    }
     const checkboxes = document.querySelectorAll('.ruta-checkbox');
     const filtroFechaBotones = document.querySelectorAll('.filtro-fecha');
     const fechaInicioInput = document.getElementById('fechaInicio');
@@ -202,70 +265,7 @@
         updateChart();
     }
 
-    const abreviaciones = {
-    'TRUJILLO': 'TRUJ',
-    'CAJAMARCA': 'CAXA',
-    'JAEN': 'JAEN',
-    'CHICLAYO': 'CHIC',
-    'PIURA': 'PIUR',
-    'LAVICTORIA': 'LIMA',
-    'MORALES': 'TARA',
-};
-    function updateChart() {
-        const selectedRutas = Array.from(checkboxes)
-            .filter(checkbox => checkbox.checked)
-            .map(checkbox => checkbox.value);
-
-        const fechaInicio = fechaInicioInput.value || null;
-        const fechaFin = fechaFinInput.value || null;
-
-        if (selectedRutas.length === 0) {
-            graficoPie.data.labels = [];
-            graficoPie.data.datasets[0].data = [];
-            graficoPie.update();
-            return;
-        }
-
-        // Hacer la solicitud POST con los rutas seleccionados y el rango de fechas
-        fetch('{{ route("ingresosPorRutas") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                rutas: selectedRutas,
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Datos recibidos:', data);
-    ;
-            if (!data.length) {
-        // Si no hay datos, limpiar el gráfico
-        graficoPie.data.labels = [];
-        graficoPie.data.datasets[0].data = [];
-        graficoPie.update();
-        return;
-    }
-
-    graficoPie.data.labels = data.map(item => {
-    const inicialAbreviacion = abreviaciones[item.rutainicial] || item.rutainicial;
-    const finalAbreviacion = abreviaciones[item.rutafinal] || item.rutafinal;
-    return `${inicialAbreviacion} - ${finalAbreviacion}`;
-});
-    // Convierte total_monto a número
-    graficoPie.data.datasets[0].data = data.map(item => parseFloat(item.total_monto));
-    const totalMonto = data.reduce((sum, item) => sum + parseFloat(item.total_monto), 0);
-
-    graficoPie.update();
-    document.getElementById('montoTotal').innerText = `${totalMonto.toLocaleString('en-US')}`;
-
-    })
-        .catch(error => console.error('Error fetching data:', error));
-    }
+    
 </script>
 @endsection
 

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('serial')->unique();
             $table->string('servicio');
             $table->decimal('monto', 10, 2);
+            $table->integer('pasajero');
             $table->date('fecha'); 
         });
     }

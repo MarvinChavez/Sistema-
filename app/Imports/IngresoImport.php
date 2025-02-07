@@ -39,7 +39,9 @@ class IngresoImport implements ToModel
             $fecha = \Carbon\Carbon::createFromFormat('d/m/Y', $row[10])->format('Y-m-d');
             $serie = $row[5];
             $numero = $row[6];
-    
+            $pasajero = $row[9];
+            
+
             // Crear o encontrar el auto
             $auto = Auto::firstOrCreate(['placa' => $placa], ['proveedor' => $proveedor]);
     
@@ -59,7 +61,8 @@ class IngresoImport implements ToModel
                 'fecha' => $fecha,
                 'monto' => $monto,
                 'servicio'=>$servicio,
-                'serial' => $serie . $numero
+                'serial' => $serie . $numero,
+                'pasajero'=>$pasajero
             ]);
         } catch (\Exception $e) {
             Log::error('Error en la importación en la fila: ' . json_encode($row) . ' Error: ' . $e->getMessage());

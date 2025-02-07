@@ -48,7 +48,7 @@
             <!-- Monto Total -->
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
                 <h2>INGRESOS TOTALES</h2>
-                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
 
@@ -114,18 +114,14 @@
 
     // Extraemos las fechas y los montos de los ingresos
     const fechas = data.ingresos.map(item => {
-    const fechaObj = new Date(item.fecha); // Convertir a objeto Date
-    fechaObj.setDate(fechaObj.getDate() + 1); // Sumar un día
-    return fechaObj;
-});
+        const fechaObj = new Date(item.fecha); // Convertir a objeto Date
+        fechaObj.setDate(fechaObj.getDate() + 1); // Sumar un día
+        return fechaObj;
+    });
 
-// Formateamos las fechas de forma adecuada para la visualización
+    const montosFormateados = data.ingresos.map(item => item.monto);
+    const pasajeros = data.ingresos.map(item => parseInt(item.pasajeros));
 
-const montosFormateados = data.ingresos.map(item => {
-    // Convertir el monto en número y luego formatearlo con separadores de miles
-    const monto = parseFloat(item.monto.replace('.', '').replace(',', '.')); // Asegurarse de que el monto es numérico
-    return monto; // Usar el valor numérico directamente para que Chart.js lo maneje correctamente
-});
     // Actualizamos el gráfico
     if (graficoIngresos) {
         graficoIngresos.destroy();  // Eliminamos el gráfico anterior
@@ -134,7 +130,7 @@ const montosFormateados = data.ingresos.map(item => {
     graficoIngresos = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: fechas ,
+            labels: fechas,
             datasets: [{
                 data: montosFormateados,
                 borderColor: 'rgba(75, 192, 192, 1)',
@@ -153,29 +149,36 @@ const montosFormateados = data.ingresos.map(item => {
                     display: false // Ocultar la leyenda
                 },
                 tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        // Formatear el valor del eje Y
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
+                    callbacks: {
+                        label: function(context) {
+                            // Formatear el valor del eje Y (monto)
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
+                            }
+
+                            // Obtener el índice de la fecha en los ingresos
+                            const index = context.dataIndex;
+                            const pasajerosCount = pasajeros[index]; // Obtener el número de pasajeros
+
+                            // Agregar los pasajeros al tooltip
+                            label += ` | Pasajeros: ${pasajerosCount}`;
+                            return label;
+                        },
+                        title: function(context) {
+                            // Formatear la fecha para mostrar solo día y mes
+                            const fecha = context[0].parsed.x;
+                            return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
                         }
-                        if (context.parsed.y !== null) {
-                            label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
-                        }
-                        return label;
-                    },
-                    title: function(context) {
-                        // Formatear la fecha para mostrar solo día y mes
-                        const fecha = context[0].parsed.x;
-                        return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
                     }
                 }
-            }
-        },
+            },
             scales: {
                 x: {
-                type: 'time', // Configuración para tiempo
+                    type: 'time', // Configuración para tiempo
                     time: {
                         unit: 'day' // Unidad de tiempo: días
                     },
@@ -214,13 +217,11 @@ const montosFormateados = data.ingresos.map(item => {
         }
     });
 
+    // Actualizar el monto total
+    document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
+    P N(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
+});
 
-        // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
-    });
 }
 
     // Eventos para los botones de filtro

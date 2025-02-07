@@ -9,7 +9,7 @@ class Ingreso extends Model
 {
     use HasFactory;
     protected $table = 'ingreso';
-    protected $fillable = ['auto_id', 'ruta_id','turno_id', 'monto','fecha','serial','servicio'];
+    protected $fillable = ['auto_id', 'ruta_id','turno_id', 'monto','fecha','serial','servicio','pasajero'];
     public $timestamps = false;
     public function auto() {
         return $this->belongsTo(Auto::class);

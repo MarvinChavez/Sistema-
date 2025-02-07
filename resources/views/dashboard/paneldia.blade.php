@@ -37,13 +37,10 @@
                     </div>
                 </form>
             </div>
-
-            <!-- Monto Total -->
-            <div class="text-center mt-4">
-                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+            <div class="text-center mt-4" id="infoIngresos" > <!-- Ocultado por defecto -->
+                <h2>INGRESOS DEL DÍA</h2>
+                <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
             </div>
-
-            <!-- Gráfico -->
             <!-- Gráfico -->
 <div class="position-relative mt-4">
     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -86,107 +83,114 @@
     let servicio = document.getElementById('servicio').value;
 
     fetch('{{ route("grafico.barRuta") }}', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    },
-    body: JSON.stringify({
-        servicio: servicio,
-        fecha_inicio:fecha_inicio // Incluir el parámetro servicio en la solicitud
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            servicio: servicio,
+            fecha_inicio: fecha_inicio
+        })
     })
-})
-.then(response => response.json())
-.then(data => {
-    console.log('Datos recibidos:', data);
-    if (graficoIngresos) {
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos recibidos:', data);
+
+        if (graficoIngresos) {
             graficoIngresos.destroy();
         }
-    graficoIngresos = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: data.labels, // Eje Y: Rutas
-        datasets: [{
-            data: data.data, // Eje X: Monto
-            backgroundColor: 'rgba(75, 192, 192, 0.6)', // Colores neón
-            borderColor: 'rgba(75, 192, 192, 1)', // Bordes
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true, // Habilitar respuesta dinámica al tamturno del contenedor
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
-        indexAxis: 'y', // Orientación horizontal
-        plugins: {
-            tooltip: {
-                enabled: true // Habilitar tooltips
+
+        graficoIngresos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels, // Eje Y: Rutas
+                datasets: [{
+                    data: data.montos, // Eje X: Monto
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
             },
-            legend: {
-                display: false // Ocultar leyenda si no es necesaria
-            },
-            datalabels: {
-                anchor: 'end',
-                align: 'right',
-                formatter: (value) => {
-                    const formatter = new Intl.NumberFormat('es-PE', {
-                        style: 'currency',
-                        currency: 'PEN', // Moneda en Soles
-                        minimumFractionDigits: 0 // Sin decimales
-                    });
-                    return formatter.format(value); // Formatear con separador de miles y símbolo de moneda
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                let monto = data.montos[tooltipItem.dataIndex];
+                                let pasajeros = data.pasajeros[tooltipItem.dataIndex];
+
+                                const formatter = new Intl.NumberFormat('es-PE', {
+                                    style: 'currency',
+                                    currency: 'PEN',
+                                    minimumFractionDigits: 0
+                                });
+
+                                return [
+                                    `Monto: ${formatter.format(monto)}`,
+                                    `Pasajeros: ${pasajeros}`
+                                ];
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        anchor: 'end', // Coloca la etiqueta al final de la barra
+                        align: 'right', // Alinea la etiqueta a la derecha de la barra
+                        formatter: function(value) {
+                        return `S/ ${value.toLocaleString('es-PE', { 
+                        minimumFractionDigits: 0, 
+                        maximumFractionDigits: 0 
+                    })}`;
                 },
-                color: '#000', // Opcional: Cambia el color de las etiquetas
                 font: {
-                    size: 12, // Opcional: Ajusta el tamturno de la fuente
-                    weight: 'bold' // Opcional: Cambia el grosor de la fuente
-                }
-            }
-        },
-        scales: {
-            x: {
-                beginAtZero: true,
-                suggestedMax: Math.ceil(Math.max(...data.data) / 4000) * 4000, // Ajustar al múltiplo de 2000 más cercano
-                grid: {
-                    display: false
+                    weight: 'bold',
+                    size: 12
                 },
-                ticks: {
-                    stepSize: 3000
+                color: '#333'
+            }
+
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        suggestedMax: Math.ceil(Math.max(...data.montos) / 4000) * 4000,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            stepSize: 3000
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            padding: 10
+                        }
+                    }
                 }
             },
-            y: {
-                grid: {
-                    display: false // Ocultar líneas de cuadrícula
-                },
-                ticks: {
-                    autoSkip: false, // Mostrar todas las etiquetas
-                    maxRotation: 0,  // Sin rotación para etiquetas
-                    minRotation: 0,
-                    padding: 10 // Separación entre etiquetas del eje Y y las barras
-                }
-            }
-        },
-        layout: {
-            padding: 20 // Espaciado alrededor del gráfico
-        },
-        elements: {
-            bar: {
-                barPercentage: 0.5, // Ancho de las barras
-                categoryPercentage: 0.7 // Espacio entre categorías
-            }
-        }
-    },
-    plugins: [ChartDataLabels] // Asegúrate de incluir ChartDataLabels
-});
-
-
+            plugins: [ChartDataLabels] // Activar el plugin
+        });
 
         // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
+    P N(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
     });
 }
+
+
 function filtrarOficina(fecha_inicio) {
     let servicio = document.getElementById('servicio').value;
 
@@ -207,89 +211,92 @@ function filtrarOficina(fecha_inicio) {
     if (graficoIngresos) {
             graficoIngresos.destroy();
         }
-    graficoIngresos = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: data.labels, // Eje Y: Rutas
-        datasets: [{
-            data: data.data, // Eje X: Monto
-            backgroundColor: 'rgba(75, 192, 192, 0.6)', // Colores neón
-            borderColor: 'rgba(75, 192, 192, 1)', // Bordes
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true, // Habilitar respuesta dinámica al tamturno del contenedor
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
-        indexAxis: 'y', // Orientación horizontal
-        plugins: {
-            tooltip: {
-                enabled: true // Habilitar tooltips
+        graficoIngresos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels, // Eje Y: Rutas
+                datasets: [{
+                    data: data.montos, // Eje X: Monto
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
             },
-            legend: {
-                display: false // Ocultar leyenda si no es necesaria
-            },
-            datalabels: {
-                anchor: 'end',
-                align: 'right',
-                formatter: (value) => {
-                    const formatter = new Intl.NumberFormat('es-PE', {
-                        style: 'currency',
-                        currency: 'PEN', // Moneda en Soles
-                        minimumFractionDigits: 0 // Sin decimales
-                    });
-                    return formatter.format(value); // Formatear con separador de miles y símbolo de moneda
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                let monto = data.montos[tooltipItem.dataIndex];
+                                let pasajeros = data.pasajeros[tooltipItem.dataIndex];
+
+                                const formatter = new Intl.NumberFormat('es-PE', {
+                                    style: 'currency',
+                                    currency: 'PEN',
+                                    minimumFractionDigits: 0
+                                });
+
+                                return [
+                                    `Monto: ${formatter.format(monto)}`,
+                                    `Pasajeros: ${pasajeros}`
+                                ];
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        anchor: 'end', // Coloca la etiqueta al final de la barra
+                        align: 'right', // Alinea la etiqueta a la derecha de la barra
+                        formatter: function(value) {
+                        return `S/ ${value.toLocaleString('es-PE', { 
+                        minimumFractionDigits: 0, 
+                        maximumFractionDigits: 0 
+                    })}`;
                 },
-                color: '#000', // Opcional: Cambia el color de las etiquetas
                 font: {
-                    size: 12, // Opcional: Ajusta el tamturno de la fuente
-                    weight: 'bold' // Opcional: Cambia el grosor de la fuente
-                }
-            }
-        },
-        scales: {
-            x: {
-                beginAtZero: true,
-                suggestedMax: Math.ceil(Math.max(...data.data) / 4000) * 4000, // Ajustar al múltiplo de 2000 más cercano
-                grid: {
-                    display: false
+                    weight: 'bold',
+                    size: 12
                 },
-                ticks: {
-                    stepSize: 3000
+                color: '#333'
+            }
+
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        suggestedMax: Math.ceil(Math.max(...data.montos) / 4000) * 4000,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            stepSize: 3000
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            padding: 10
+                        }
+                    }
                 }
             },
-            y: {
-                grid: {
-                    display: false // Ocultar líneas de cuadrícula
-                },
-                ticks: {
-                    autoSkip: false, // Mostrar todas las etiquetas
-                    maxRotation: 0,  // Sin rotación para etiquetas
-                    minRotation: 0,
-                    padding: 10 // Separación entre etiquetas del eje Y y las barras
-                }
-            }
-        },
-        layout: {
-            padding: 20 // Espaciado alrededor del gráfico
-        },
-        elements: {
-            bar: {
-                barPercentage: 0.5, // Ancho de las barras
-                categoryPercentage: 0.7 // Espacio entre categorías
-            }
-        }
-    },
-    plugins: [ChartDataLabels] // Asegúrate de incluir ChartDataLabels
-});
-
-
+            plugins: [ChartDataLabels] // Activar el plugin
+        });
 
         // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
+    P(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
     });
 }
 function filtrarTurno(fecha_inicio) {
@@ -312,89 +319,92 @@ function filtrarTurno(fecha_inicio) {
     if (graficoIngresos) {
             graficoIngresos.destroy();
         }
-    graficoIngresos = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: data.labels, // Eje Y: Rutas
-        datasets: [{
-            data: data.data, // Eje X: Monto
-            backgroundColor: 'rgba(75, 192, 192, 0.6)', // Colores neón
-            borderColor: 'rgba(75, 192, 192, 1)', // Bordes
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true, // Habilitar respuesta dinámica al tamturno del contenedor
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
-        indexAxis: 'y', // Orientación horizontal
-        plugins: {
-            tooltip: {
-                enabled: true // Habilitar tooltips
+        graficoIngresos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels, // Eje Y: Rutas
+                datasets: [{
+                    data: data.montos, // Eje X: Monto
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
             },
-            legend: {
-                display: false // Ocultar leyenda si no es necesaria
-            },
-            datalabels: {
-                anchor: 'end',
-                align: 'right',
-                formatter: (value) => {
-                    const formatter = new Intl.NumberFormat('es-PE', {
-                        style: 'currency',
-                        currency: 'PEN', // Moneda en Soles
-                        minimumFractionDigits: 0 // Sin decimales
-                    });
-                    return formatter.format(value); // Formatear con separador de miles y símbolo de moneda
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                let monto = data.montos[tooltipItem.dataIndex];
+                                let pasajeros = data.pasajeros[tooltipItem.dataIndex];
+
+                                const formatter = new Intl.NumberFormat('es-PE', {
+                                    style: 'currency',
+                                    currency: 'PEN',
+                                    minimumFractionDigits: 0
+                                });
+
+                                return [
+                                    `Monto: ${formatter.format(monto)}`,
+                                    `Pasajeros: ${pasajeros}`
+                                ];
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        anchor: 'end', // Coloca la etiqueta al final de la barra
+                        align: 'right', // Alinea la etiqueta a la derecha de la barra
+                        formatter: function(value) {
+                        return `S/ ${value.toLocaleString('es-PE', { 
+                        minimumFractionDigits: 0, 
+                        maximumFractionDigits: 0 
+                    })}`;
                 },
-                color: '#000', // Opcional: Cambia el color de las etiquetas
                 font: {
-                    size: 12, // Opcional: Ajusta el tamturno de la fuente
-                    weight: 'bold' // Opcional: Cambia el grosor de la fuente
-                }
-            }
-        },
-        scales: {
-            x: {
-                beginAtZero: true,
-                suggestedMax: Math.ceil(Math.max(...data.data) / 4000) * 4000, // Ajustar al múltiplo de 2000 más cercano
-                grid: {
-                    display: false
+                    weight: 'bold',
+                    size: 12
                 },
-                ticks: {
-                    stepSize: 3000
+                color: '#333'
+            }
+
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        suggestedMax: Math.ceil(Math.max(...data.montos) / 4000) * 4000,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            stepSize: 3000
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            padding: 10
+                        }
+                    }
                 }
             },
-            y: {
-                grid: {
-                    display: false // Ocultar líneas de cuadrícula
-                },
-                ticks: {
-                    autoSkip: false, // Mostrar todas las etiquetas
-                    maxRotation: 0,  // Sin rotación para etiquetas
-                    minRotation: 0,
-                    padding: 10 // Separación entre etiquetas del eje Y y las barras
-                }
-            }
-        },
-        layout: {
-            padding: 20 // Espaciado alrededor del gráfico
-        },
-        elements: {
-            bar: {
-                barPercentage: 0.5, // Ancho de las barras
-                categoryPercentage: 0.7 // Espacio entre categorías
-            }
-        }
-    },
-    plugins: [ChartDataLabels] // Asegúrate de incluir ChartDataLabels
-});
-
-
+            plugins: [ChartDataLabels] // Activar el plugin
+        });
 
         // Actualizar el monto total
-        document.getElementById('montoTotal').textContent = data.montoTotal.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
+    P N(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
     });
 }
     // Eventos para los botones de filtro

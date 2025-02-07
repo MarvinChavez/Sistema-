@@ -90,7 +90,7 @@
 
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
                 <h2>INGRESOS POR OFICINA</h2>
-                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
             <div class="position-relative mt-4">
@@ -211,47 +211,64 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
         backgroundColor: 'rgba(0,0,0,0)', 
         fill: false
     }];
-    graficoRuta.update();  // Actualizar el gráfico para reflejar los cambios
-    return;  // Terminar la ejecución sin continuar con más lógica
+    graficoRuta.update();
+    return;
 }        let todasLasFechas = [];
-        document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        // Extraer todas las fechas de todos los autos
+    document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
+    P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
+
         data.ciudades.forEach(ciudad => {
             todasLasFechas = [...todasLasFechas, ...ciudad.fechas];
         });
-
-        // Eliminar duplicados y ordenar las fechas
         todasLasFechas = [...new Set(todasLasFechas)].sort();
-
-        // Establecer las fechas en las etiquetas del gráfico
-        // Destruir el gráfico existente si ya hay uno
         if (graficoRuta) {
             graficoRuta.destroy();
         }
+       
         graficoRuta = new Chart(ctx, {
     type: 'line',
     data: {
-        labels: [],
-        datasets: []
+        labels: todasLasFechas,
+        datasets: data.ciudades.map((ciudad, index) => {
+            const montos = todasLasFechas.map(fecha => {
+                const indexFecha = ciudad.fechas.indexOf(fecha);
+                return indexFecha >= 0 ? ciudad.montos[indexFecha] : NaN; // Usa NaN para continuar la línea
+            });
+            const pasajerosData = todasLasFechas.map(fecha => {
+                const indexFecha = ciudad.fechas.indexOf(fecha);
+                const pasajeros = indexFecha >= 0 ? ciudad.pasajeros[indexFecha] : 0;
+                return indexFecha >= 0 ? ciudad.pasajeros[indexFecha] : 0;
+
+            });
+            return {
+                label: `${ciudad.ciudad_inicial} (TOTAL: S/. ${ciudad.montoTotal})`,
+                data: montos,
+                borderColor: getRandomColor(index),
+                backgroundColor: getRandomColor(index),
+                tension: 0.2,
+                pointRadius: 2.5,
+                pointHoverRadius: 6,
+                fill: false,
+                spanGaps: true,
+                pasajerosData: pasajerosData
+            };
+        })
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
+        maintainAspectRatio: false,
         plugins: {
             legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                tooltip: {
+                display: true,
+                position: 'top',
+                labels: {
+                    color: '#333',
+                    font: { size: 14 }
+                }
+            },
+            tooltip: {
                 callbacks: {
                     label: function(context) {
-                        // Formatear el valor del eje Y
                         let label = context.dataset.label || '';
                         if (label) {
                             label += ': ';
@@ -259,10 +276,11 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        return label;
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        
+                        return `${label} - Pasajeros: ${pasajeros}`;
                     },
                     title: function(context) {
-                        // Formatear la fecha para mostrar solo día y mes
                         const fecha = context[0].parsed.x;
                         return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
                     }
@@ -271,88 +289,52 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
         },
         scales: {
             x: {
-                type: 'time', // Configuración para tiempo
-                    time: {
-                        unit: 'day' // Unidad de tiempo: días
-                    },
-                    title: {
-                        display: true,
-                        text: 'Fecha',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        autoSkip: true, // Activar el salto automático de etiquetas
-                        maxTicksLimit: 7, // Limitar a 7 etiquetas como máximo
-                        maxRotation: 0, // Sin rotación para las etiquetas
-                        minRotation: 0 // Sin rotación para las etiquetas
-                    }
+                type: 'time',
+                time: { unit: 'day' },
+                title: {
+                    display: true,
+                    text: 'Fecha',
+                    color: '#333',
+                    font: { size: 16 }
                 },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Importe (S/.)',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.1)'
-                    }
+                grid: { display: false },
+                ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: 7,
+                    maxRotation: 0,
+                    minRotation: 0
                 }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Importe (S/.)',
+                    color: '#333',
+                    font: { size: 16 }
+                },
+                grid: { color: 'rgba(200, 200, 200, 0.1)' }
             }
-    },
+        }
+    }
 });
-        graficoRuta.data.labels = todasLasFechas;
-        graficoRuta.data.datasets = data.ciudades.map((ciudad, index) => {
-            const montos = todasLasFechas.map(fecha => {
-                const indexFecha = ciudad.fechas.indexOf(fecha);
-                return indexFecha >= 0 ? ciudad.montos[indexFecha] : NaN; // Usar NaN para continuar la línea
-            });
-            return {
-                label: `${ciudad.ciudad_inicial} ( TOTAL: S/. ${ciudad.montoTotal})`,
-                data: montos,
-                borderColor: getRandomColor(index),
-                backgroundColor:getRandomColor(index),
-                tension: 0.2,
-                pointRadius: 2.5,
-                pointHoverRadius: 6,
-                fill: false, // No llenar el área bajo la línea
-                spanGaps: true // Configurar para que la línea no se corte
-            };
-        });
         graficoRuta.update(); // Actualizar el gráfico después de cambiar los datos
         document.getElementById('btn-mostrar-promedios').addEventListener('click', () => {
-    mostrarMontosPromedio(data.ciudades);
+        mostrarMontosPromedio(data.ciudades);
 });
-
-document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
-    mostrarMontos(data.ciudades);
+        document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
+        mostrarMontos(data.ciudades);
 });  
-
-
     })
     .catch(error => {
         console.error('Error al obtener datos:', error);
     });
-      
-
 }
 
 
 document.getElementById('btn-limpiar').addEventListener('click', function () {
-    // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
-    // Limpiar el gráfico y los montos promedio
-    infoIngresos.style.display = 'none'; // Oculta el div    
-
+    infoIngresos.style.display = 'none'; 
     graficoRuta.data.labels = [];
     graficoRuta.data.datasets = [];
     graficoRuta.update();
@@ -360,22 +342,18 @@ document.getElementById('btn-limpiar').addEventListener('click', function () {
     document.getElementById('montoTotal').textContent = 0;
 });
 
-document.getElementById('filtros-ciudad-form').addEventListener('submit', function (event) {
+    document.getElementById('filtros-ciudad-form').addEventListener('submit', function (event) {
     event.preventDefault();
 
     let ciudadesSeleccionadas = Array.from(document.querySelectorAll('input[name="ciudades[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_inicio = document.getElementById('fecha_inicio').value;
     let fecha_fin = document.getElementById('fecha_fin').value;
-let fecha_inicio2 = new Date(fecha_inicio);
+    let fecha_inicio2 = new Date(fecha_inicio);
     let fecha_fin2 = new Date(fecha_fin);
-
-    // Sumamos un día a las fechas
     fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
     fecha_fin2.setDate(fecha_fin2.getDate() + 1);
-    // Ocultar filtros y botón "Filtrar"
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-    // Llamada a la función para filtrar datos
+    document.getElementById('filtros-container').classList.add('d-none');
+    document.querySelector('button[type="submit"]').classList.add('d-none');
     actualizarRangoFechas(fecha_inicio2, fecha_fin2)
     fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin);
 });
@@ -385,11 +363,10 @@ let fecha_inicio2 = new Date(fecha_inicio);
         fecha_inicio.setDate(fecha_inicio.getDate() - 7);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
-        // Ocultar filtros y botón "Filtrar"
         actualizarRangoFechas(fecha_inicio, fecha_fin);
 
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); 
+    document.querySelector('button[type="submit"]').classList.add('d-none');
     document.getElementById('montos').innerHTML = '';
 
         fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
@@ -404,11 +381,9 @@ let fecha_inicio2 = new Date(fecha_inicio);
         actualizarRangoFechas(fecha_inicio, fecha_fin);
         document.getElementById('montos').innerHTML = '';
 
-        // Ocultar filtros y botón "Filtrar"
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none');
+    document.querySelector('button[type="submit"]').classList.add('d-none');
     actualizarRangoFechas(fecha_inicio, fecha_fin);
-
         fetchData(ciudadesSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -428,13 +403,13 @@ let fecha_inicio2 = new Date(fecha_inicio);
 
     function getRandomColor(index) {
     const neonColors = [
-        "#39FF14", // Neon Green
-        "#FF073A", // Neon Red
-        "#FFFF00", // Neon Yellow
-        "#00FFFF", // Neon Cyan
-        "#FF00FF", // Neon Magenta
-        "#FF1493", // Neon Deep Pink
-        "#00FF00", // Neon Green (Otra variación)
+        "#39FF14", 
+        "#FF073A", 
+        "#FFFF00", 
+        "#00FFFF", 
+        "#FF00FF", 
+        "#FF1493", 
+        "#00FF00", 
         "#FF6347", // Neon Tomato
         "#FF4500", // Neon Orange Red
         "#32CD32", // Neon Lime Green

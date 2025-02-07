@@ -81,7 +81,7 @@
             </div>
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
                 <h2>INGRESOS POR RUTA</h2>
-                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
             <div class="position-relative mt-4">
@@ -205,8 +205,8 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
     }];
     graficoRuta.update();  // Actualizar el gráfico para reflejar los cambios
     return;  // Terminar la ejecución sin continuar con más lógica
-}
-        document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
+P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
         let todasLasFechas = [];
         
         // Extraer todas las fechas de todos los autos
@@ -225,27 +225,48 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
         graficoRuta = new Chart(ctx, {
     type: 'line',
     data: {
-        labels: [],
-        datasets: []
+        labels: todasLasFechas,
+        datasets: data.rutas.map((ruta, index) => {
+            const montos = todasLasFechas.map(fecha => {
+                const indexFecha = ruta.fechas.indexOf(fecha);
+                return indexFecha >= 0 ? ruta.montos[indexFecha] : NaN; // Usa NaN para continuar la línea
+            });
+
+            const pasajerosData = todasLasFechas.map(fecha => {
+                const indexFecha = ruta.fechas.indexOf(fecha);
+                const pasajeros = indexFecha >= 0 ? ruta.pasajeros[indexFecha] : 0;
+                return indexFecha >= 0 ? ruta.pasajeros[indexFecha] : 0;
+
+            });
+            return {
+                label: `${ruta.nombre} (TOTAL: S/. ${ruta.total})`,
+                data: montos,
+                borderColor: getRandomColor(index),
+                backgroundColor: getRandomColor(index),
+                tension: 0.2,
+                pointRadius: 2.5,
+                pointHoverRadius: 6,
+                fill: false,
+                spanGaps: true,
+                pasajerosData: pasajerosData // Agregamos los datos de pasajeros para acceder en el tooltip
+            };
+        })
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
+        maintainAspectRatio: false,
         plugins: {
             legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                tooltip: {
+                display: true,
+                position: 'top',
+                labels: {
+                    color: '#333',
+                    font: { size: 14 }
+                }
+            },
+            tooltip: {
                 callbacks: {
                     label: function(context) {
-                        // Formatear el valor del eje Y
                         let label = context.dataset.label || '';
                         if (label) {
                             label += ': ';
@@ -253,10 +274,11 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        return label;
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        
+                        return `${label} - Pasajeros: ${pasajeros}`;
                     },
                     title: function(context) {
-                        // Formatear la fecha para mostrar solo día y mes
                         const fecha = context[0].parsed.x;
                         return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
                     }
@@ -265,62 +287,34 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
         },
         scales: {
             x: {
-                type: 'time', // Configuración para tiempo
-                    time: {
-                        unit: 'day' // Unidad de tiempo: días
-                    },
-                    title: {
-                        display: true,
-                        text: 'Fecha',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        autoSkip: true, // Activar el salto automático de etiquetas
-                        maxTicksLimit: 7, // Limitar a 7 etiquetas como máximo
-                        maxRotation: 0, // Sin rotación para las etiquetas
-                        minRotation: 0 // Sin rotación para las etiquetas
-                    }
+                type: 'time',
+                time: { unit: 'day' },
+                title: {
+                    display: true,
+                    text: 'Fecha',
+                    color: '#333',
+                    font: { size: 16 }
                 },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Importe (S/.)',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.1)'
-                    }
+                grid: { display: false },
+                ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: 7,
+                    maxRotation: 0,
+                    minRotation: 0
                 }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Importe (S/.)',
+                    color: '#333',
+                    font: { size: 16 }
+                },
+                grid: { color: 'rgba(200, 200, 200, 0.1)' }
             }
-    },
+        }
+    }
 });
-        graficoRuta.data.labels = todasLasFechas;
-        graficoRuta.data.datasets = data.rutas.map((ruta, index) => {
-            const montos = todasLasFechas.map(fecha => {
-                const indexFecha = ruta.fechas.indexOf(fecha);
-                return indexFecha >= 0 ? ruta.montos[indexFecha] : NaN; // Usar NaN para continuar la línea
-            });
-            return {
-                label: `${ruta.nombre} ( TOTAL: S/. ${ruta.total})`,
-                data: montos,
-                borderColor: getRandomColor(index),
-                backgroundColor:getRandomColor(index),
-                tension: 0.2,
-                pointRadius: 2.5,
-                pointHoverRadius: 6,
-                fill: false, // No llenar el área bajo la línea
-                spanGaps: true // Configurar para que la línea no se corte
-            };
-        });
         graficoRuta.update(); // Actualizar el gráfico después de cambiar los datos
         document.getElementById('btn-mostrar-promedios').addEventListener('click', () => {
     mostrarMontosPromedio(data.rutas);

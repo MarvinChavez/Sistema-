@@ -65,10 +65,9 @@
             </div>
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
                 <h2>INGRESOS POR PLACA</h2>
-                <h5>Importe Total: S/ <span id="montoTotal">0.00</span></h5>
+                <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
-
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
                     <button class="btn btn-light me-1" id="btn-semana">Semana</button>
@@ -145,31 +144,98 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
 <script>
 
-    const ctxAuto = document.getElementById('graficoAuto').getContext('2d');
-    const graficoAuto = new Chart(ctxAuto, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: []
+    let ctx = document.getElementById('graficoAuto').getContext('2d');
+    let graficoAuto;
+    function fetchAutoData(autosSeleccionados, fecha_inicio, fecha_fin) {
+    let servicio = document.getElementById('servicio').value;
+
+    fetch('{{ route("filtrarauto") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        options: {
-            responsive: true,
-        maintainAspectRatio: false, // Permitir que el gráfico cambie su proporción al redimensionar
+        body: JSON.stringify({
+            autos: autosSeleccionados,
+            fecha_inicio: fecha_inicio,
+            fecha_fin: fecha_fin,
+            servicio: servicio  // Incluir el parámetro servicio en la solicitud
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Si no hay datos, retornar
+        console.log('Datos recibidos:', data);
+        if (!data.autos || data.autos.length === 0) {
+            graficoAuto.data.labels = [];  // Vaciar las etiquetas
+            graficoAuto.data.datasets = [{  // Vaciar los datasets
+        label: 'No hay datos disponibles',
+        data: [],
+        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
+        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
+        fill: false
+    }];
+    graficoAuto.update();  // Actualizar el gráfico para reflejar los cambios
+    return;  // Terminar la ejecución sin continuar con más lógica
+        }
+
+        let todasLasFechas = [];
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
+    P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
+        data.autos.forEach(auto => {
+            todasLasFechas = [...todasLasFechas, ...auto.fechas];
+        });
+
+        todasLasFechas = [...new Set(todasLasFechas)].sort();
+
+        if (graficoAuto) {
+            graficoAuto.destroy();
+        }
+        graficoAuto = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: todasLasFechas,
+        datasets: data.autos.map((auto, index) => {
+            const montos = todasLasFechas.map(fecha => {
+                const indexFecha = auto.fechas.indexOf(fecha);
+                return indexFecha >= 0 ? auto.montos[indexFecha] : NaN; // Usa NaN para continuar la línea
+            });
+
+            const pasajerosData = todasLasFechas.map(fecha => {
+                const indexFecha = auto.fechas.indexOf(fecha);
+                const pasajeros = indexFecha >= 0 ? auto.pasajeros[indexFecha] : 0;
+                return indexFecha >= 0 ? auto.pasajeros[indexFecha] : 0;
+
+            });
+            return {
+                label: `${auto.nombre} (TOTAL: S/. ${auto.total})(Turnos:${auto.total_turnos})`,
+                data: montos,
+                borderColor: getRandomColor(index),
+                backgroundColor: getRandomColor(index),
+                tension: 0.2,
+                pointRadius: 2.5,
+                pointHoverRadius: 6,
+                fill: false,
+                spanGaps: true,
+                pasajerosData: pasajerosData // Agregamos los datos de pasajeros para acceder en el tooltip
+            };
+        })
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                tooltip: {
+                display: true,
+                position: 'top',
+                labels: {
+                    color: '#333',
+                    font: { size: 14 }
+                }
+            },
+            tooltip: {
                 callbacks: {
                     label: function(context) {
-                        // Formatear el valor del eje Y
                         let label = context.dataset.label || '';
                         if (label) {
                             label += ': ';
@@ -177,10 +243,10 @@
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        return label;
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        return `${label} - Pasajeros: ${pasajeros}`;
                     },
                     title: function(context) {
-                        // Formatear la fecha para mostrar solo día y mes
                         const fecha = context[0].parsed.x;
                         return new Date(fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
                     }
@@ -189,45 +255,50 @@
         },
         scales: {
             x: {
-                type: 'time', // Configuración para tiempo
-                    time: {
-                        unit: 'day' // Unidad de tiempo: días
-                    },
-                    title: {
-                        display: true,
-                        text: 'Fecha',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        autoSkip: true, // Activar el salto automático de etiquetas
-                        maxTicksLimit: 7, // Limitar a 7 etiquetas como máximo
-                        maxRotation: 0, // Sin rotación para las etiquetas
-                        minRotation: 0 // Sin rotación para las etiquetas
-                    }
+                type: 'time',
+                time: { unit: 'day' },
+                title: {
+                    display: true,
+                    text: 'Fecha',
+                    color: '#333',
+                    font: { size: 16 }
                 },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Importe (S/.)',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.1)'
-                    }
+                grid: { display: false },
+                ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: 7,
+                    maxRotation: 0,
+                    minRotation: 0
                 }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Importe (S/.)',
+                    color: '#333',
+                    font: { size: 16 }
+                },
+                grid: { color: 'rgba(200, 200, 200, 0.1)' }
             }
-    },
-    });
+        }
+    }
+});
+        // Actualizar el gráfico
+        graficoAuto.update();
 
+        // Registrar eventos para los botones
+        document.getElementById('btn-mostrar-promedios').addEventListener('click', () => {
+            mostrarMontosPromedio(data.autos);
+        });
+
+        document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
+            mostrarMontos(data.autos);
+        });
+    })
+    .catch(error => {
+        console.error("Error al obtener los datos:", error);
+    });
+}
     document.getElementById('btn-limpiar').addEventListener('click', function () {
          // Mostrar de nuevo el contenedor de filtros y el botón "Filtrar"
     document.getElementById('filtros-container').classList.remove('d-none');
@@ -314,89 +385,7 @@ document.getElementById('btn-semana').addEventListener('click', function () {
     fetchAutoData(autosSeleccionados, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
 });
    
-    function fetchAutoData(autosSeleccionados, fecha_inicio, fecha_fin) {
-    let servicio = document.getElementById('servicio').value;
-
-    fetch('{{ route("filtrarauto") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            autos: autosSeleccionados,
-            fecha_inicio: fecha_inicio,
-            fecha_fin: fecha_fin,
-            servicio: servicio  // Incluir el parámetro servicio en la solicitud
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Si no hay datos, retornar
-        console.log('Datos recibidos:', data);
-        document.getElementById('montoTotal').textContent = data.total_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (!data.autos || data.autos.length === 0) {
-            graficoAuto.data.labels = [];  // Vaciar las etiquetas
-            graficoAuto.data.datasets = [{  // Vaciar los datasets
-        label: 'No hay datos disponibles',
-        data: [],
-        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
-        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
-        fill: false
-    }];
-    graficoAuto.update();  // Actualizar el gráfico para reflejar los cambios
-    return;  // Terminar la ejecución sin continuar con más lógica
-        }
-
-        let todasLasFechas = [];
-
-        // Extraer todas las fechas de todos los autos
-        data.autos.forEach(auto => {
-            todasLasFechas = [...todasLasFechas, ...auto.fechas];
-        });
-
-        // Eliminar duplicados y ordenar las fechas
-        todasLasFechas = [...new Set(todasLasFechas)].sort();
-
-        // Establecer las fechas en las etiquetas del gráfico
-        graficoAuto.data.labels = todasLasFechas;
-
-        // Configurar los datasets de autos
-        graficoAuto.data.datasets = data.autos.map((auto, index) => {
-            const montos = todasLasFechas.map(fecha => {
-                const indexFecha = auto.fechas.indexOf(fecha);
-                return indexFecha >= 0 ? auto.montos[indexFecha] : NaN; // Usar NaN para continuar la línea
-            });
-
-            return {
-                label: `${auto.nombre} (${auto.numero_turnos} turnos)`, // Mostrar el nombre y número de turnos
-                data: montos,
-                borderColor: getRandomColor(index),
-                backgroundColor:getRandomColor(index),
-                tension: 0.2,
-                pointRadius: 2.5,
-                pointHoverRadius: 6,
-                fill: false, // No llenar el área bajo la línea
-                spanGaps: true // Configurar para que la línea no se corte
-            };
-        });
-
-        // Actualizar el gráfico
-        graficoAuto.update();
-
-        // Registrar eventos para los botones
-        document.getElementById('btn-mostrar-promedios').addEventListener('click', () => {
-            mostrarMontosPromedio(data.autos);
-        });
-
-        document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
-            mostrarMontos(data.autos);
-        });
-    })
-    .catch(error => {
-        console.error("Error al obtener los datos:", error);
-    });
-}
+   
 
     function getRandomColor(index) {
         const neonColors = [
