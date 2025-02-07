@@ -7,7 +7,6 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm p-4">
-                <h4 class="card-title text-center mb-4">Ingresos totales</h4>
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
@@ -47,7 +46,7 @@
 
             <!-- Monto Total -->
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
-                <h2>INGRESOS TOTALES</h2>
+                <h4 class="card-title text-center mb-4">Ingresos totales</h4>
                 <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>

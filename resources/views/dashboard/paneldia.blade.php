@@ -7,7 +7,6 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm p-4">
-                <h4 class="card-title text-center mb-4">Ingresos del día</h4>
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
@@ -38,7 +37,7 @@
                 </form>
             </div>
             <div class="text-center mt-4" id="infoIngresos" > <!-- Ocultado por defecto -->
-                <h2>INGRESOS DEL DÍA</h2>
+                <h4 class="card-title text-center mb-4">Ingresos del día</h4>
                 <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
             </div>
             <!-- Gráfico -->
