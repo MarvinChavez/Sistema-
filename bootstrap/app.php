@@ -11,8 +11,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        ini_set('max_execution_time', 300);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        ini_set('max_execution_time', 300);
     })->create();
