@@ -66,7 +66,7 @@
             <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
                 <h2>INGRESOS POR PLACA</h2>
                 <h5 id="infoTotales">Importe Total: S/ 0 <br>P(): 0</h5>
-                <h5 id="rangoFechas">Rango de Fechas: -</h5>
+                <h5 id="rangoFechas">Rango de Fechas:-</h5>
             </div>
             <div class="position-relative mt-4">
                 <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
@@ -217,7 +217,7 @@
                 pointHoverRadius: 6,
                 fill: false,
                 spanGaps: true,
-                pasajerosData: pasajerosData // Agregamos los datos de pasajeros para acceder en el tooltip
+                pasajerosData: pasajerosData 
             };
         })
     },
