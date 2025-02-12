@@ -66,7 +66,7 @@ class IngresoImport implements ToModel
             ]);
         } catch (\Exception $e) {
             Log::error('Error en la importación en la fila: ' . json_encode($row) . ' Error: ' . $e->getMessage());
-            throw new \Exception('Error en la importación en la fila: ' . json_encode($row), 0, $e);
+            throw new \Exception('Error en la importación en fila: ' . json_encode($row), 0, $e);
         }
     }
     
