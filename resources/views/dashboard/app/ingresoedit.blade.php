@@ -70,6 +70,14 @@
             </select>
         </div>
         <div class="form-group">
+            <label for="servicio">Servicio</label>
+            <select name="servicio" class="form-control">
+                    <option value="SPI">SPI</option>
+                    <option value="SPP">SPP</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group">
             <label for="servicio">Serial</label>
             <input type="text" name="servicio" class="form-control" value="{{ $ingreso->servicio }}">
         </div>

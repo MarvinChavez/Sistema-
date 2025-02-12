@@ -67,7 +67,14 @@
                 @endforeach
             </select>
         </div>
-
+        <div class="form-group">
+            <label for="servicio">Servicio</label>
+            <select name="servicio" class="form-control">
+                    <option value="SPI">SPI</option>
+                    <option value="SPP">SPP</option>
+                @endforeach
+            </select>
+        </div>
         <div class="form-group">
             <label for="monto">Monto</label>
             <input type="number" name="monto" class="form-control">
