@@ -4,8 +4,7 @@
     </IfModule>
 
     RewriteEngine On
-   
-    # Borrar **
+  
     RewriteRule ^(.*)$ public/$1 [L]
 
 
