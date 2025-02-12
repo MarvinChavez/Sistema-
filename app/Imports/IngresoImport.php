@@ -40,10 +40,6 @@ class IngresoImport implements ToModel
             $serie = trim($row[5]);
             $numero = trim($row[6]);
             $pasajero = trim($row[9]);
-            
-            
-
-            // Crear o encontrar el auto
             $auto = Auto::firstOrCreate(['placa' => $placa], ['proveedor' => $proveedor]);
     
             // Crear o encontrar la ruta
