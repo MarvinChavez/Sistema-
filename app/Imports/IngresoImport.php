@@ -29,17 +29,18 @@ class IngresoImport implements ToModel
             }
     
             // Acceder a las columnas usando los índices
-            $placa = $row[8];
-            $proveedor = $row[7];
-            $ciudadInicial = $row[13];
-            $ciudadFinal = $row[14];
-            $horaturno = $row[12];
+            $placa = trim($row[8]);
+            $proveedor = trim($row[7]);
+            $ciudadInicial = trim($row[13]);
+            $ciudadFinal = trim($row[14]);
+            $horaturno = trim($row[12]);
             $servicio = trim($row[11]);
-            $monto = $row[15];
-            $fecha = $row[10];
-            $serie = $row[5];
-            $numero = $row[6];
-            $pasajero = $row[9];
+            $monto = trim($row[15]);
+            $fecha = trim($row[10]);
+            $serie = trim($row[5]);
+            $numero = trim($row[6]);
+            $pasajero = trim($row[9]);
+            
             
 
             // Crear o encontrar el auto
