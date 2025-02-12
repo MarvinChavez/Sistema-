@@ -1,20 +1,28 @@
-# Usa la imagen oficial de PHP con Apache
+# Usa una imagen base de PHP 8.2 con Apache
 FROM php:8.2.4-apache
 
-# Instala extensiones necesarias
+# Instala dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libfreetype6-dev \
-    zip unzip git curl libpq-dev libonig-dev libzip-dev \
+    curl unzip git libpng-dev libjpeg-dev libfreetype6-dev \
+    zip unzip libpq-dev libonig-dev libzip-dev libssl-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip gd
 
-# Habilita mod_rewrite para Laravel
+# Habilita mod_rewrite en Apache para Laravel
 RUN a2enmod rewrite
 
-# Copia los archivos del proyecto
-COPY . /var/www/html
+# Configura Apache para servir desde la carpeta 'public'
+COPY ./docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+# Instala Node.js 20.15.0 y NPM
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@latest
 
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
+
+# Copia los archivos del proyecto
+COPY . .
 
 # Instala Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -22,17 +30,28 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Instala dependencias de Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Da permisos a storage y bootstrap/cache
-RUN chmod -R 777 storage bootstrap/cache
+# Genera la clave de la aplicación
+RUN php artisan key:generate
 
-# Instala Node.js y dependencias de NPM
-RUN apt-get install -y nodejs npm && npm install
+# Optimiza la configuración de Laravel
+RUN php artisan config:cache
+RUN php artisan route:cache
+RUN php artisan view:cache
+
+# Instala dependencias de frontend
+RUN npm install
+
+# Configura el entorno para evitar errores con Vite y módulos ESM
+ENV NODE_OPTIONS="--experimental-modules"
 
 # Compila los assets con Vite
 RUN npm run build
 
-# Expone el puerto 80
-EXPOSE 80
+# Da permisos correctos a Laravel
+RUN chmod -R 777 storage bootstrap/cache
 
-# Inicia Laravel con Apache
-CMD ["php", "-S", "0.0.0.0:80", "-t", "public"]
+# Expone el puerto 10000 (Render lo maneja internamente)
+EXPOSE 10000
+
+# Inicia Apache
+CMD ["apache2-foreground"]
