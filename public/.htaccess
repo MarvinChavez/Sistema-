@@ -4,6 +4,10 @@
     </IfModule>
 
     RewriteEngine On
+   
+    # Borrar **
+    RewriteRule ^(.*)$ public/$1 [L]
+
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
