@@ -13,16 +13,14 @@ RUN a2enmod rewrite
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Copia los archivos del proyecto
+# Copia los archivos del proyecto antes de instalar dependencias
 COPY . .
 
-# Da permisos correctos antes de instalar dependencias
-RUN chmod -R 777 /var/www/html storage bootstrap/cache
+# Asegura que las carpetas necesarias existan antes de asignar permisos
+RUN mkdir -p storage bootstrap/cache && chmod -R 777 storage bootstrap/cache
 
-# Instala Composer
+# Instala Composer sin caché ni scripts problemáticos
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Instala dependencias de Laravel sin caché ni scripts problemáticos
 RUN composer install --no-dev --optimize-autoloader --no-cache --no-plugins --no-scripts
 
 # Genera la clave de la aplicación
@@ -34,7 +32,7 @@ RUN php artisan route:cache
 RUN php artisan view:cache
 
 # Instala dependencias de frontend
-RUN npm install
+RUN npm install --no-audit --no-fund
 
 # Configura el entorno para evitar errores con Vite y módulos ESM
 ENV NODE_OPTIONS="--experimental-modules"
@@ -42,7 +40,7 @@ ENV NODE_OPTIONS="--experimental-modules"
 # Compila los assets con Vite
 RUN npm run build
 
-# Da permisos correctos nuevamente
+# Asigna permisos correctos después de instalar dependencias
 RUN chmod -R 777 storage bootstrap/cache
 
 # Expone el puerto (Render maneja esto internamente)

@@ -1,4 +1,4 @@
-# Ignorar archivos innecesarios
+# Ignorar archivos y carpetas innecesarias
 node_modules
 vendor
 storage/logs
@@ -7,20 +7,32 @@ storage/framework/sessions
 storage/framework/views
 bootstrap/cache
 
-# Archivos de entorno
+# Ignorar archivos de configuración locales
 .env
 .env.local
 .env.*.local
+!.env.example
 
-# Archivos y carpetas del sistema
-.idea
-.vscode
+# Ignorar archivos del sistema y dependencias
 .DS_Store
-Thumbs.db
-
-# Caché de Composer y Node.js
+*.log
+*.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 composer.lock
 package-lock.json
-yarn.lock
-.pnpm-debug.log
-.npm
+
+# Ignorar archivos de Git y Docker
+.git
+.gitignore
+.dockerignore
+
+# Ignorar archivos de Vite y frontend
+public/hot
+public/storage
+public/build
+.vite
+.vitepress
+.vscode
+.idea
