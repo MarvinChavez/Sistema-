@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: laravel-app
+    runtime: docker
+    repo: https://github.com/MarvinChavez/Sistema
+    branch: develop
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://mi-laravel-app.onrender.com
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: br3rxrrjbcritrblbkvn-mysql.services.clever-cloud.com
+      - key: DB_PORT
+        value: 3306
+      - key: DB_DATABASE
+        value: br3rxrrjbcritrblbkvn
+      - key: DB_USERNAME
+        value: ulguh4l3crsgo9ac
+      - key: DB_PASSWORD
+        value: Ui6JY3DDTWyUKG5y7LyX
+    dockerfilePath: ./Dockerfile
