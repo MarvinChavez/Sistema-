@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+        ini_set('max_execution_time', 300);
 
     }
 }
