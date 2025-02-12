@@ -1,4 +1,26 @@
-vendor/
-node_modules/
-storage/logs/
+# Ignorar archivos innecesarios
+node_modules
+vendor
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+bootstrap/cache
+
+# Archivos de entorno
 .env
+.env.local
+.env.*.local
+
+# Archivos y carpetas del sistema
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+
+# Caché de Composer y Node.js
+composer.lock
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+.npm

@@ -1,4 +1,4 @@
-# Usa una imagen base de PHP 8.2 con Apache
+# Usa PHP 8.2 con Apache
 FROM php:8.2-apache
 
 # Instala dependencias del sistema
@@ -13,17 +13,17 @@ RUN a2enmod rewrite
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Da permisos correctos a Laravel antes de copiar archivos
-RUN mkdir -p storage bootstrap/cache && chmod -R 777 storage bootstrap/cache
-
 # Copia los archivos del proyecto
 COPY . .
+
+# Da permisos correctos antes de instalar dependencias
+RUN chmod -R 777 /var/www/html storage bootstrap/cache
 
 # Instala Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Instala dependencias de Laravel
-RUN composer install --no-dev --optimize-autoloader
+# Instala dependencias de Laravel sin caché ni scripts problemáticos
+RUN composer install --no-dev --optimize-autoloader --no-cache --no-plugins --no-scripts
 
 # Genera la clave de la aplicación
 RUN php artisan key:generate
@@ -34,7 +34,7 @@ RUN php artisan route:cache
 RUN php artisan view:cache
 
 # Instala dependencias de frontend
-RUN npm install --omit=dev
+RUN npm install
 
 # Configura el entorno para evitar errores con Vite y módulos ESM
 ENV NODE_OPTIONS="--experimental-modules"
@@ -42,8 +42,11 @@ ENV NODE_OPTIONS="--experimental-modules"
 # Compila los assets con Vite
 RUN npm run build
 
-# Exponer puerto 80 (Render lo manejará automáticamente)
-EXPOSE 80
+# Da permisos correctos nuevamente
+RUN chmod -R 777 storage bootstrap/cache
+
+# Expone el puerto (Render maneja esto internamente)
+EXPOSE 10000
 
 # Inicia Apache
 CMD ["apache2-foreground"]
