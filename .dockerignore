@@ -1,17 +1,17 @@
-# Ignorar archivos y carpetas innecesarias
-node_modules
-vendor
-storage/logs
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
-bootstrap/cache
+# Ignorar archivos y carpetas innecesarios
+node_modules/
+vendor/
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+bootstrap/cache/
 
 # Ignorar archivos de configuración locales
 .env
 .env.local
 .env.*.local
-!.env.example
+!.env.example  # Excepto el archivo .env.example
 
 # Ignorar archivos del sistema y dependencias
 .DS_Store
@@ -24,7 +24,7 @@ composer.lock
 package-lock.json
 
 # Ignorar archivos de Git y Docker
-.git
+.git/
 .gitignore
 .dockerignore
 
@@ -32,7 +32,11 @@ package-lock.json
 public/hot
 public/storage
 public/build
-.vite
-.vitepress
-.vscode
-.idea
+.vite/
+.vitepress/
+.vscode/
+.idea/
+
+# Ignorar archivos de desarrollo y pruebas
+tests/
+phpunit.xml

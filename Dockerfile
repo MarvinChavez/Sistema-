@@ -23,27 +23,26 @@ RUN mkdir -p storage bootstrap/cache && chmod -R 777 storage bootstrap/cache
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN composer install --no-dev --optimize-autoloader --no-cache --no-plugins --no-scripts
 
-# Genera la clave de la aplicación
+
 RUN php artisan key:generate
 
-# Optimiza la configuración de Laravel
+
 RUN php artisan config:cache
 RUN php artisan route:cache
 RUN php artisan view:cache
 
-# Instala dependencias de frontend
+
 RUN npm install --no-audit --no-fund
 
-# Configura el entorno para evitar errores con Vite y módulos ESM
+
 ENV NODE_OPTIONS="--experimental-modules"
 
-# Compila los assets con Vite
+
 RUN npm run build
 
-# Asigna permisos correctos después de instalar dependencias
+
 RUN chmod -R 777 storage bootstrap/cache
 
-# Expone el puerto (Render maneja esto internamente)
 EXPOSE 10000
 
 # Inicia Apache
