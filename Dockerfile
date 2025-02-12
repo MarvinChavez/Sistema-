@@ -33,7 +33,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN composer install --no-dev --optimize-autoloader --no-cache --no-plugins --no-scripts
 
 # Genera la clave de la aplicación
-RUN php artisan key:generate
+#RUN php artisan key:generate
 
 # Ocultar
 RUN chmod -R 777 storage bootstrap/cache
@@ -55,3 +55,7 @@ EXPOSE 10000
 
 # Inicia Apache
 CMD ["apache2-foreground"]
+
+
+
+#instalar si hay falla:composer require symfony/error-handler
