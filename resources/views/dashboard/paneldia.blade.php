@@ -36,9 +36,10 @@
                     </div>
                 </form>
             </div>
-            <div class="text-center mt-4" id="infoIngresos" > <!-- Ocultado por defecto -->
-                <h4 class="card-title text-center mb-4">Ingresos del día</h4>
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;">
+                <h4 class="card-title text-center mb-4">INGRESOS DEL DÍA</h4>
                 <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
+                <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
             <!-- Gráfico -->
 <div class="position-relative mt-4">
@@ -49,9 +50,9 @@
     </div>
 
     <div class="card shadow-sm mt-12 container-fluid">
-        <div style="padding-top: 50px;width: 750px; height: 700px">
+        <div style="padding-top: 50px;width: auto; height: 700px">
             <!-- Ajusta el canvas para que sea responsivo -->
-            <canvas id="graficoIngresos" style="width: 100%; height: auto;"></canvas>
+            <canvas id="graficoIngresos" style="width: 100% height: auto;"></canvas>
         </div>
     </div>
 </div>
@@ -141,12 +142,14 @@
                     },
                     datalabels: {
                         anchor: 'end', // Coloca la etiqueta al final de la barra
-                        align: 'right', // Alinea la etiqueta a la derecha de la barra
-                        formatter: function(value) {
-                        return `S/ ${value.toLocaleString('es-PE', { 
+                align: 'right', // Alinea la etiqueta a la derecha de la barra
+                formatter: function(value, context) {
+                    let pasajeros = data.pasajeros[context.dataIndex];
+
+                    return `S/ ${value.toLocaleString('es-PE', { 
                         minimumFractionDigits: 0, 
                         maximumFractionDigits: 0 
-                    })}`;
+                    })} - P= ${pasajeros}`;
                 },
                 font: {
                     weight: 'bold',
@@ -159,7 +162,7 @@
                 scales: {
                     x: {
                         beginAtZero: true,
-                        suggestedMax: Math.ceil(Math.max(...data.montos) / 4000) * 4000,
+                        suggestedMax: Math.ceil(Math.max(...data.montos) / 6000) * 6000,
                         grid: {
                             display: false
                         },
@@ -183,9 +186,12 @@
             plugins: [ChartDataLabels] // Activar el plugin
         });
 
-        // Actualizar el monto total
-        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
-    P N(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
+        let fechaInicio = document.getElementById('fecha_inicio').value;
+        let fecha_inicio2 = new Date(fechaInicio);
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
+
+        actualizarRangoFechas(fecha_inicio2);
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}- Pasajeros: ${parseInt(data.totalPasajeros).toLocaleString('en-US')}`;
     });
 }
 
@@ -251,12 +257,14 @@ function filtrarOficina(fecha_inicio) {
                     },
                     datalabels: {
                         anchor: 'end', // Coloca la etiqueta al final de la barra
-                        align: 'right', // Alinea la etiqueta a la derecha de la barra
-                        formatter: function(value) {
-                        return `S/ ${value.toLocaleString('es-PE', { 
+                align: 'right', // Alinea la etiqueta a la derecha de la barra
+                formatter: function(value, context) {
+                    let pasajeros = data.pasajeros[context.dataIndex];
+
+                    return `S/ ${value.toLocaleString('es-PE', { 
                         minimumFractionDigits: 0, 
                         maximumFractionDigits: 0 
-                    })}`;
+                    })} - P= ${pasajeros}`;
                 },
                 font: {
                     weight: 'bold',
@@ -269,7 +277,7 @@ function filtrarOficina(fecha_inicio) {
                 scales: {
                     x: {
                         beginAtZero: true,
-                        suggestedMax: Math.ceil(Math.max(...data.montos) / 4000) * 4000,
+                        suggestedMax: Math.ceil(Math.max(...data.montos) / 6000) * 6000,
                         grid: {
                             display: false
                         },
@@ -292,10 +300,12 @@ function filtrarOficina(fecha_inicio) {
             },
             plugins: [ChartDataLabels] // Activar el plugin
         });
+        let fechaInicio = document.getElementById('fecha_inicio').value;
+        let fecha_inicio2 = new Date(fechaInicio);
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
 
-        // Actualizar el monto total
-        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
-    P(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
+        actualizarRangoFechas(fecha_inicio2);
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}- Pasajeros: ${parseInt(data.totalPasajeros).toLocaleString('en-US')}`;
     });
 }
 function filtrarTurno(fecha_inicio) {
@@ -359,12 +369,14 @@ function filtrarTurno(fecha_inicio) {
                     },
                     datalabels: {
                         anchor: 'end', // Coloca la etiqueta al final de la barra
-                        align: 'right', // Alinea la etiqueta a la derecha de la barra
-                        formatter: function(value) {
-                        return `S/ ${value.toLocaleString('es-PE', { 
+                align: 'right', // Alinea la etiqueta a la derecha de la barra
+                formatter: function(value, context) {
+                    let pasajeros = data.pasajeros[context.dataIndex];
+
+                    return `S/ ${value.toLocaleString('es-PE', { 
                         minimumFractionDigits: 0, 
                         maximumFractionDigits: 0 
-                    })}`;
+                    })} - P= ${pasajeros}`;
                 },
                 font: {
                     weight: 'bold',
@@ -372,7 +384,6 @@ function filtrarTurno(fecha_inicio) {
                 },
                 color: '#333'
             }
-
                 },
                 scales: {
                     x: {
@@ -400,10 +411,12 @@ function filtrarTurno(fecha_inicio) {
             },
             plugins: [ChartDataLabels] // Activar el plugin
         });
+        let fechaInicio = document.getElementById('fecha_inicio').value;
+        let fecha_inicio2 = new Date(fechaInicio);
+    fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
 
-        // Actualizar el monto total
-        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
-    P N(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
+        actualizarRangoFechas(fecha_inicio2);
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}- Pasajeros: ${parseInt(data.totalPasajeros).toLocaleString('en-US')}`;
     });
 }
     // Eventos para los botones de filtro
@@ -421,6 +434,20 @@ function filtrarTurno(fecha_inicio) {
         let fecha_inicio = document.getElementById('fecha_inicio').value;
         filtrarTurno(fecha_inicio);
     });
+    function actualizarRangoFechas(fecha_inicio) {
+    const rangoFechas = document.getElementById('rangoFechas');
 
+    function formatearFecha(fecha) {
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0'); // Se suma 1 porque los meses van de 0 a 11
+        const año = date.getFullYear();
+        return `${dia}/${mes}/${año}`;
+    }
+
+    const fechaInicioFormateada = formatearFecha(fecha_inicio);
+    rangoFechas.textContent = `${fechaInicioFormateada}`;
+    infoIngresos.style.display = 'block';
+}
 </script>
 @endsection

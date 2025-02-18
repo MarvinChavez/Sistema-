@@ -32,7 +32,7 @@
                     </div>
                 </div>
                 <div class="text-center mt-4" id="infoIngresos"> <!-- Ocultado por defecto -->
-                    <h4 class="card-title text-center mb-4">Ingresos por Placa</h4>
+                    <h4 class="card-title text-center mb-4">INGRESOS POR PLACA</h4>
                     <h5 id="infoTotales"></h5>
                 </div>
                 <div class="row">
@@ -196,8 +196,7 @@ function updateChart() {
         );
 
         document.getElementById('infoTotales').innerHTML = 
-            `Importe Total: S/ ${totalMonto.toLocaleString('en-US')} 
-             P(${parseInt(totalPasajeros).toLocaleString('en-US')})`;
+            `Importe Total: S/ ${totalMonto.toLocaleString('en-US')} - Pasajeros: ${parseInt(totalPasajeros).toLocaleString('en-US')}`;
 
         graficoPie.update();
     })
@@ -226,8 +225,6 @@ function updateChart() {
                 fechaFin = new Date().toISOString().split('T')[0];
                 break;
         }
-
-        // Actualizar campos de fecha
         fechaInicioInput.value = fechaInicio;
         fechaFinInput.value = fechaFin;
 
@@ -237,22 +234,15 @@ function updateChart() {
     const filtroFechaBotones = document.querySelectorAll('.filtro-fecha');
     const fechaInicioInput = document.getElementById('fechaInicio');
     const fechaFinInput = document.getElementById('fechaFin');
-
-    // Añadir listeners a los checkboxes
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateChart);
     });
-
-    // Añadir listeners a los botones de filtro rápido de fechas
     filtroFechaBotones.forEach(boton => {
         boton.addEventListener('click', function() {
             aplicarFiltroFecha(this.dataset.filtro);
         });
     });
-
-    // Listener para las fechas seleccionadas
     fechaInicioInput.addEventListener('change', updateChart);
     fechaFinInput.addEventListener('change', updateChart);
-
 </script>
 @endsection

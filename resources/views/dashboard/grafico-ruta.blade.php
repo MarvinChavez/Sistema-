@@ -21,7 +21,7 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Ingresos por Ruta</h4>
+                <h4 class="card-title text-center mb-4">INGRESOS POR RUTA</h4>
                 <form id="filtros-ruta-form" class="row g-3">
                         <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
                             <label class="form-label">Ruta:</label>
@@ -98,17 +98,12 @@
                 </div>       
             </div>
             <div class="row mt-4">
-                <!-- Contenedor de los botones (ocupando solo el espacio necesario) -->
                 <div id="contenedor-botones" class="col-auto d-flex flex-column align-items-start">
                     <button class="btn btn-primary btn-sm mb-2" id="btn-mostrar-promedios">Promedio</button>
                     <button class="btn btn-secondary btn-sm" id="btn-mostrar-montos">Montos Finales</button>
                 </div>
-            
-                <!-- Contenedor para los cards -->
                 <div id="montos" class="col d-flex flex-wrap"></div>
             </div>
-            
-            
             </div>
     </div>
 </div>
@@ -169,7 +164,6 @@
 <script>
     let ctx = document.getElementById('graficoRuta').getContext('2d');
     let graficoRuta;
-// Función para cargar datos al gráfico
 function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
     let servicio = document.getElementById('servicio').value;
 
@@ -195,30 +189,22 @@ function fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin) {
     .then(data => {
         console.log('Datos recibidos:', data);
         if (!data.rutas || data.rutas.length === 0) {
-            graficoRuta.data.labels = [];  // Vaciar las etiquetas
-            graficoRuta.data.datasets = [{  // Vaciar los datasets
+            graficoRuta.data.labels = []; 
+            graficoRuta.data.datasets = [{ 
         label: 'No hay datos disponibles',
         data: [],
-        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
-        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
+        borderColor: 'rgba(0,0,0,0)', 
+        backgroundColor: 'rgba(0,0,0,0)',
         fill: false
     }];
-    graficoRuta.update();  // Actualizar el gráfico para reflejar los cambios
-    return;  // Terminar la ejecución sin continuar con más lógica
-}document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
-P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
+    graficoRuta.update();  
+    return; 
+}document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')} - Pasajeros: ${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
         let todasLasFechas = [];
-        
-        // Extraer todas las fechas de todos los autos
-        data.rutas.forEach(ruta => {
+            data.rutas.forEach(ruta => {
             todasLasFechas = [...todasLasFechas, ...ruta.fechas];
         });
-
-        // Eliminar duplicados y ordenar las fechas
         todasLasFechas = [...new Set(todasLasFechas)].sort();
-
-        // Establecer las fechas en las etiquetas del gráfico
-        // Destruir el gráfico existente si ya hay uno
         if (graficoRuta) {
             graficoRuta.destroy();
         }
@@ -229,7 +215,7 @@ P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
         datasets: data.rutas.map((ruta, index) => {
             const montos = todasLasFechas.map(fecha => {
                 const indexFecha = ruta.fechas.indexOf(fecha);
-                return indexFecha >= 0 ? ruta.montos[indexFecha] : NaN; // Usa NaN para continuar la línea
+                return indexFecha >= 0 ? ruta.montos[indexFecha] : NaN;
             });
 
             const pasajerosData = todasLasFechas.map(fecha => {
@@ -239,7 +225,7 @@ P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
 
             });
             return {
-                label: `${ruta.nombre} (TOTAL: S/. ${ruta.total})`,
+                label: `${ruta.nombre} (TOTAL: S/. ${ruta.total} - P= ${ruta.total_pasajeros})`,
                 data: montos,
                 borderColor: getRandomColor(index),
                 backgroundColor: getRandomColor(index),
@@ -248,7 +234,7 @@ P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
                 pointHoverRadius: 6,
                 fill: false,
                 spanGaps: true,
-                pasajerosData: pasajerosData // Agregamos los datos de pasajeros para acceder en el tooltip
+                pasajerosData: pasajerosData
             };
         })
     },
@@ -267,14 +253,14 @@ P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        let label = context.dataset.label || '';
+                        let label ='Monto';
                         if (label) {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0;
                         
                         return `${label} - Pasajeros: ${pasajeros}`;
                     },
@@ -315,7 +301,7 @@ P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
         }
     }
 });
-        graficoRuta.update(); // Actualizar el gráfico después de cambiar los datos
+        graficoRuta.update(); 
         document.getElementById('btn-mostrar-promedios').addEventListener('click', () => {
     mostrarMontosPromedio(data.rutas);
 });
@@ -327,39 +313,29 @@ document.getElementById('btn-mostrar-montos').addEventListener('click', () => {
     .catch(error => {
         console.error('Error al obtener datos:', error);
     });
-      
-
 }
-
 document.getElementById('btn-limpiar').addEventListener('click', function () {
     document.getElementById('filtros-container').classList.remove('d-none');
     document.querySelector('button[type="submit"]').classList.remove('d-none');
     graficoRuta.data.labels = [];
     graficoRuta.data.datasets = [];
     graficoRuta.update();
-    infoIngresos.style.display = 'none'; // Oculta el div    
-
+    infoIngresos.style.display = 'none';
     document.getElementById('montos').innerHTML = '';
     document.getElementById('montoTotal').textContent = 0;
-
 });
 
 document.getElementById('filtros-ruta-form').addEventListener('submit', function (event) {
     event.preventDefault();
-
     let rutasSeleccionadas = Array.from(document.querySelectorAll('input[name="rutas[]"]:checked')).map(checkbox => checkbox.value);
     let fecha_inicio = document.getElementById('fecha_inicio').value;
     let fecha_fin = document.getElementById('fecha_fin').value;
     let fecha_inicio2 = new Date(fecha_inicio);
     let fecha_fin2 = new Date(fecha_fin);
-
-    // Sumamos un día a las fechas
     fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
     fecha_fin2.setDate(fecha_fin2.getDate() + 1);
-    // Ocultar filtros y botón "Filtrar"
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
-    // Llamada a la función para filtrar datos
+    document.getElementById('filtros-container').classList.add('d-none'); 
+    document.querySelector('button[type="submit"]').classList.add('d-none'); 
     actualizarRangoFechas(fecha_inicio2, fecha_fin2)
     fetchData(rutasSeleccionadas, fecha_inicio, fecha_fin);
 });
@@ -368,14 +344,12 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         let fecha_inicio = new Date();
         fecha_inicio.setDate(fecha_inicio.getDate() - 7);
         let fecha_fin = new Date();
-        fecha_fin.setHours(23, 59, 59);
-        // Ocultar filtros y botón "Filtrar"
+        fecha_fin.setHours(23, 59, 59);        
         actualizarRangoFechas(fecha_inicio, fecha_fin);
 
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none');
+    document.querySelector('button[type="submit"]').classList.add('d-none'); 
     document.getElementById('montos').innerHTML = '';
-
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -385,11 +359,10 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         fecha_inicio.setMonth(fecha_inicio.getMonth() - 1);
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
-        // Ocultar filtros y botón "Filtrar"
         actualizarRangoFechas(fecha_inicio, fecha_fin);
 
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); 
+    document.querySelector('button[type="submit"]').classList.add('d-none'); 
     document.getElementById('montos').innerHTML = '';
 
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
@@ -402,11 +375,9 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         let fecha_fin = new Date();
         fecha_fin.setHours(23, 59, 59);
         actualizarRangoFechas(fecha_inicio, fecha_fin);
-        // Ocultar filtros y botón "Filtrar"
-    document.getElementById('filtros-container').classList.add('d-none'); // Oculta el contenedor de filtros
-    document.querySelector('button[type="submit"]').classList.add('d-none'); // Oculta el botón "Filtrar"
+    document.getElementById('filtros-container').classList.add('d-none'); 
+    document.querySelector('button[type="submit"]').classList.add('d-none'); 
     document.getElementById('montos').innerHTML = '';
-
         fetchData(rutasSeleccionadas, fecha_inicio.toISOString().split('T')[0], fecha_fin.toISOString().split('T')[0]);
     });
 
@@ -434,7 +405,7 @@ document.getElementById('filtros-ruta-form').addEventListener('submit', function
         "#9B30FF"  // Neon Purple
     ];
 
-    return neonColors[index % neonColors.length]; // Ciclo a través de los colores
+    return neonColors[index % neonColors.length]; 
 }
 // Mostrar montos promedio por ruta
 function mostrarMontosPromedio(rutas) {
@@ -446,8 +417,8 @@ function mostrarMontosPromedio(rutas) {
         const { nombre, monto_promedio } = ruta;
 
         const card = document.createElement('div');
-        card.className = 'col-auto'; // Ajustar tamaño dinámico para que se agrupen mejor
-        card.style.padding = '2px'; // Reducir padding entre los cards
+        card.className = 'col-auto'; 
+        card.style.padding = '2px';
         card.innerHTML = `
             <div class="card card-promedio" style="background-color: ${getRandomColor(index)};">
                 <p style="font-size: 16px; color: black; font-family: Georgia, serif;">
@@ -460,8 +431,6 @@ function mostrarMontosPromedio(rutas) {
         index++;
     });
 }
-
-// Mostrar último registro (fecha y monto) por ruta
 function mostrarMontos(rutas) {
     const contenedor = document.getElementById('montos');
     contenedor.innerHTML = '';
@@ -474,8 +443,8 @@ function mostrarMontos(rutas) {
         const monto = ultimo_registro?.monto;
 
         const card = document.createElement('div');
-        card.className = 'col-auto'; // Ajustar tamaño dinámico para que se agrupen mejor
-        card.style.padding = '2px'; // Reducir padding entre los cards
+        card.className = 'col-auto';
+        card.style.padding = '2px'; 
         card.innerHTML = `
             <div class="card card-promedio2" style="background-color: ${getRandomColor(index)};">
                 <p style="font-size: 13px; color: black; font-family: Georgia, serif;">${fecha}</p>
@@ -490,13 +459,21 @@ function mostrarMontos(rutas) {
 }
 function actualizarRangoFechas(fecha_inicio, fecha_fin) {
     const rangoFechas = document.getElementById('rangoFechas');
-    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
-    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+
+    function formatearFecha(fecha) {
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0'); 
+        const año = date.getFullYear();
+        return `${dia}/${mes}/${año}`;
+    }
+
+    const fechaInicioFormateada = formatearFecha(fecha_inicio);
+    const fechaFinFormateada = formatearFecha(fecha_fin);
+
     rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
     infoIngresos.style.display = 'block';
-
 }
-
 </script>
 
 @endsection  

@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="text-center mt-4" id="infoIngresos"> <!-- Ocultado por defecto -->
-                    <h4 class="card-title text-center mb-4">Ingresos por Ruta</h4>
+                    <h4 class="card-title text-center mb-4">INGRESOS POR RUTA</h4>
                     <h5 id="infoTotales"></h5>
                 </div>
                 <!-- Filtros de Fecha en la parte superior (Opcionales) -->
@@ -207,8 +207,7 @@ let graficoPie = new Chart(ctxPie, {
         );
 
         document.getElementById('infoTotales').innerHTML = 
-            `Importe Total: S/ ${totalMonto.toLocaleString('en-US')} 
-             P(${parseInt(totalPasajeros).toLocaleString('en-US')})`;
+            `Importe Total: S/ ${totalMonto.toLocaleString('en-US')} - Pasajeros: ${parseInt(totalPasajeros).toLocaleString('en-US')}`;
 
         graficoPie.update();
     })

@@ -21,7 +21,7 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Ingresos por Oficina</h4>
+                <h4 class="card-title text-center mb-4">INGRESOS POR OFICINA</h4>
                 <form id="filtros-ciudad-form" class="row g-3">
                         <div class="col-md-6" style="max-height: 200px; overflow-y: auto;">
                             <label class="form-label">Oficina:</label>
@@ -37,9 +37,8 @@
                             ];
                             @endphp
                             @php
-                            $ciudadesProcesadas = []; // Array para rastrear las ciudades ya mostradas
+                            $ciudadesProcesadas = [];
                         @endphp
-                        
                         @foreach($rutas as $ruta)
                             @php
                                 $ciudad_inicial = strtoupper(trim($ruta->ciudad_inicial));
@@ -54,12 +53,11 @@
                                     </label>
                                 </div>
                                 @php
-                                    $ciudadesProcesadas[] = $ciudad_inicial; // Agregar la ciudad inicial al array
+                                    $ciudadesProcesadas[] = $ciudad_inicial; 
                                 @endphp
                             @endif
                         @endforeach
                         </div>
-    
                         <div class="col-md-6">
                             <label for="servicio" class="form-label">Tipo Servicio:</label>
                             <select id="servicio" name="servicio" class="form-select">
@@ -76,19 +74,15 @@
                             <label for="fecha_fin" class="form-label">Fecha Fin:</label>
                             <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
                         </div>
-                    
-
                     <div class="col-md-12 text-center mt-3">
                         <button type="submit" class="btn btn-primary">Filtrar</button>
                     </div>
                 </form>
-                
             </div>
             <div class="col-md-12 text-center mt-3">
                 <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
             </div>
-
-            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;">
                 <h2>INGRESOS POR OFICINA</h2>
                 <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
@@ -99,7 +93,6 @@
                     <button class="btn btn-light me-1" id="btn-mes">Mes</button>
                     <button class="btn btn-light" id="btn-año">Año</button>
                 </div>
-
                 <div class="card shadow-sm mt-12 container-fluid"  id="grafico-container">
                     <div style="padding-top: 50px;width: auto; height: 700px">
                         <canvas id="graficoRuta" style="width: 100%; height: auto;"></canvas>
@@ -107,17 +100,12 @@
                 </div>      
             </div>
             <div class="row mt-4">
-                <!-- Contenedor de los botones (ocupando solo el espacio necesario) -->
                 <div id="contenedor-botones" class="col-auto d-flex flex-column align-items-start">
                     <button class="btn btn-primary btn-sm mb-2" id="btn-mostrar-promedios">Promedio</button>
                     <button class="btn btn-secondary btn-sm" id="btn-mostrar-montos">Montos Finales</button>
                 </div>
-            
-                <!-- Contenedor para los cards -->
                 <div id="montos" class="col d-flex flex-wrap"></div>
             </div>
-            
-            
             </div>
     </div>
 </div>
@@ -214,8 +202,7 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
     graficoRuta.update();
     return;
 }        let todasLasFechas = [];
-    document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
-    P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
+    document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')} - Pasajeros: ${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
 
         data.ciudades.forEach(ciudad => {
             todasLasFechas = [...todasLasFechas, ...ciudad.fechas];
@@ -241,7 +228,7 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
 
             });
             return {
-                label: `${ciudad.ciudad_inicial} (TOTAL: S/. ${ciudad.montoTotal})`,
+                label: `${ciudad.ciudad_inicial} (TOTAL: S/. ${ciudad.montoTotal} - P= ${ciudad.total_pasajeros})`,
                 data: montos,
                 borderColor: getRandomColor(index),
                 backgroundColor: getRandomColor(index),
@@ -269,14 +256,14 @@ function fetchData(ciudadesSeleccionadas, fecha_inicio, fecha_fin) {
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        let label = context.dataset.label || '';
+                        let label ='Monto';
                         if (label) {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0;
                         
                         return `${label} - Pasajeros: ${pasajeros}`;
                     },
@@ -481,13 +468,21 @@ function mostrarMontos(ciudades) {
 }
 function actualizarRangoFechas(fecha_inicio, fecha_fin) {
     const rangoFechas = document.getElementById('rangoFechas');
-    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
-    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+
+    function formatearFecha(fecha) {
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0'); 
+        const año = date.getFullYear();
+        return `${dia}/${mes}/${año}`;
+    }
+
+    const fechaInicioFormateada = formatearFecha(fecha_inicio);
+    const fechaFinFormateada = formatearFecha(fecha_fin);
+
     rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
     infoIngresos.style.display = 'block';
-
 }
-
 </script>
 
 @endsection  

@@ -46,7 +46,7 @@
                     </div>
                 </div>
                 <div class="text-center mt-4" id="infoIngresos"> <!-- Ocultado por defecto -->
-                    <h4 class="card-title text-center mb-4">Ingresos por Placa-Ruta</h4>
+                    <h4 class="card-title text-center mb-4">INGRESOS POR PLACA-RUTA</h4>
                     <h5 id="infoTotales"></h5>
                 </div>
                 <div class="position-relative mt-4">
@@ -129,8 +129,7 @@ google.charts.setOnLoadCallback(function() {
     .then(data => {
         console.log('Datos recibidos:', data); 
         document.getElementById('infoTotales').innerHTML = 
-            `Importe Total: S/ ${data.total.toLocaleString('en-US')} 
-             P(${parseInt(data.total_pasajeros_general).toLocaleString('en-US')})`;
+            `Importe Total: S/ ${data.total.toLocaleString('en-US')} - Pasajeros: ${parseInt(data.total_pasajeros_general).toLocaleString('en-US')})`;
         // Datos para Google Charts
         const chartData = [['Ruta', 'Monto']];
 

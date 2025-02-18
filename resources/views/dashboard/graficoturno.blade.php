@@ -9,7 +9,6 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm p-4" id="filtros-container">
-                <!-- Botones de Navegación -->
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 0px; z-index: 10;">
                         <a class="btn btn-light me-1" href="{{ route('graficoDia') }}" id="btn-dia">I.Dia</a>
@@ -23,11 +22,7 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-
-                <!-- Título de la Vista -->
-                <h4 class="card-title text-center mb-4">Ingresos por Turno</h4>
-
-                <!-- Formulario para Seleccionar Ruta, Turnos y Fechas -->
+                <h4 class="card-title text-center mb-4">INGRESOS POR TURNO</h4>
                 <form id="turnosForm" class="row g-3">
                     <div class="col-md-6">
                         <label for="rutaSelect" class="form-label">Ruta:</label>
@@ -55,11 +50,9 @@
                             @endforeach
                         </select>
                     </div>
-
                     <div class="col-md-6">
                         <label for="turnoCheckboxContainer" class="form-label">Turnos:</label>
                         <div id="turnoCheckboxContainer" class="form-check">
-                            <!-- Aquí se agregarán los checkboxes dinámicamente -->
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -70,17 +63,14 @@
                             <option value="SPP">SPP</option>
                         </select>
                     </div>
-
                     <div class="col-md-3">
                         <label for="fechaInicio" class="form-label">Fecha Inicio:</label>
                         <input type="date" id="fechaInicio" class="form-control">
                     </div>
-
                     <div class="col-md-3">
                         <label for="fechaFin" class="form-label">Fecha Fin:</label>
                         <input type="date" id="fechaFin" class="form-control">
                     </div>
-
                     <div class="col-md-12 text-center mt-3">
                         <button type="submit" class="btn btn-primary">Filtrar</button>
                     </div>
@@ -89,12 +79,11 @@
                 <div class="col-md-12 text-center mt-3">
                     <button type="button" class="btn btn-secondary" id="btn-limpiar">Atrás</button>
                 </div>
-                <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
+                <div class="text-center mt-4" id="infoIngresos" style="display: none;">
                     <h2>INGRESOS POR TURNO</h2>
                     <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                     <h5 id="rangoFechas">Rango de Fechas: - </h5>
                 </div>
-                <!-- Contenedor para el gráfico de líneas -->
                 <div class="position-relative mt-4">
                     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
                         <button class="btn btn-light me-1" id="btn-semana">Semana</button>
@@ -109,20 +98,15 @@
                 </div>
 
                 <div class="row mt-4">
-                    <!-- Contenedor de los botones (ocupando solo el espacio necesario) -->
                     <div id="contenedor-botones" class="col-auto d-flex flex-column align-items-start">
                         <button class="btn btn-primary btn-sm mb-2" id="btn-mostrar-promedios">Promedio</button>
                         <button class="btn btn-secondary btn-sm" id="btn-mostrar-montos">Montos Finales</button>
                     </div>
-                
-                    <!-- Contenedor para los cards -->
-                    <div id="montos" class="col d-flex flex-wrap"></div>
+                        <div id="montos" class="col d-flex flex-wrap"></div>
                 </div>
         </div>
     </div>
 </div>
-
-<!-- Estilos CSS -->
 <style>
      #contenedor-botones {
     display: flex;
@@ -209,10 +193,8 @@
         turnoContainer.innerHTML = ''; // Limpiar si no hay ruta o tipo de servicio
     }
 });
-
-// Escuchar cambios en el select de tipo servicio
 document.getElementById('servicio').addEventListener('change', function() {
-    document.getElementById('rutaSelect').dispatchEvent(new Event('change')); // Simular cambio en la ruta para actualizar los turnos
+    document.getElementById('rutaSelect').dispatchEvent(new Event('change')); 
 });
     let ctx = document.getElementById('graficoTurno').getContext('2d');
     let graficoTurno;
@@ -232,14 +214,14 @@ document.getElementById('servicio').addEventListener('change', function() {
             ruta:rutaS,
             fecha_inicio: fecha_inicio,
             fecha_fin: fecha_fin,
-            servicio: servicio  // Incluir el parámetro servicio en la solicitud
+            servicio: servicio 
         })
     })
     .then(response => response.json())
     .then(data => {
         console.log('Datos recibidos:', data);
 if (!data.turnos || data.turnos.length === 0) {
-    graficoTurno.data.labels = [];  // Vaciar las etiquetas
+    graficoTurno.data.labels = [];  
     graficoTurno.data.datasets = [{  // Vaciar los datasets
         label: 'No hay datos disponibles',
         data: [],
@@ -248,13 +230,12 @@ if (!data.turnos || data.turnos.length === 0) {
         fill: false
     }];
     graficoTurno.update();  // Actualizar el gráfico para reflejar los cambios
-    return;  // Terminar la ejecución sin continuar con más lógica
+    return;  
 }
 
 let todasLasFechas = [];
 
-document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
-P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
+document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')} - Pasajeros: ${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
 data.turnos.forEach(turno => {
     todasLasFechas = [...todasLasFechas, ...turno.fechas];
 });
@@ -524,11 +505,20 @@ function mostrarMontos(turnos) {
     }
     function actualizarRangoFechas(fecha_inicio, fecha_fin) {
     const rangoFechas = document.getElementById('rangoFechas');
-    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
-    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+
+    function formatearFecha(fecha) {
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0'); // Se suma 1 porque los meses van de 0 a 11
+        const año = date.getFullYear();
+        return `${dia}/${mes}/${año}`;
+    }
+
+    const fechaInicioFormateada = formatearFecha(fecha_inicio);
+    const fechaFinFormateada = formatearFecha(fecha_fin);
+
     rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
     infoIngresos.style.display = 'block';
-
 }
 
 </script>

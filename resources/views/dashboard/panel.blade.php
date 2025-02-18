@@ -45,14 +45,12 @@
             </div>
 
             <!-- Monto Total -->
-            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> <!-- Ocultado por defecto -->
-                <h4 class="card-title text-center mb-4">Ingresos totales</h4>
+            <div class="text-center mt-4" id="infoIngresos" style="display: none;"> 
+                <h4 class="card-title text-center mb-4">INGRESOS TOTALES</h4>
                 <h5 id="infoTotales">Importe Total: S/ 0 <br> P(): 0</h5>
                 <h5 id="rangoFechas">Rango de Fechas: - </h5>
             </div>
 
-            <!-- Gráfico -->
-            <!-- Gráfico -->
 <div class="position-relative mt-4">
     <div class="d-flex justify-content-start position-absolute" style="top: -30px; left: 10px; z-index: 10;">
         <button class="btn btn-light me-1" id="btn-semana">Semana</button>
@@ -62,7 +60,6 @@
 
     <div class="card shadow-sm mt-12 container-fluid"  id="grafico-container">
         <div style="padding-top: 50px;width: auto; height: 700px">
-            <!-- Ajusta el canvas para que sea responsivo -->
             <canvas id="graficoIngresos" style="width: 100%; height: auto;"></canvas>
         </div>
     </div>
@@ -216,14 +213,10 @@
         }
     });
 
-    // Actualizar el monto total
-    document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}
-    P N(${parseInt(data.totalPasajeros).toLocaleString('en-US')})`;
+    document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.montoTotal).toLocaleString('en-US')}- Pasajeros: ${parseInt(data.totalPasajeros).toLocaleString('en-US')}`;
 });
 
 }
-
-    // Eventos para los botones de filtro
     document.getElementById('btn-semana').addEventListener('click', () => {
         let fechaFin = new Date();
         let fechaInicio = new Date();
@@ -247,34 +240,36 @@
         actualizarRangoFechas(fechaInicio, fechaFin);
         filtrarDatos(fechaInicio.toISOString().split('T')[0], fechaFin.toISOString().split('T')[0]);
     });
-
-    // Evento para el formulario de filtros de fechas personalizado
     document.getElementById('filtros-form').addEventListener('submit', function (e) {
         e.preventDefault();
         let fechaInicio = document.getElementById('fecha_inicio').value;
         let fechaFin = document.getElementById('fecha_fin').value;
         let fecha_inicio2 = new Date(fechaInicio);
     let fecha_fin2 = new Date(fechaFin);
-
-    // Sumamos un día a las fechas
     fecha_inicio2.setDate(fecha_inicio2.getDate() + 1);
     fecha_fin2.setDate(fecha_fin2.getDate() + 1);
         filtrarDatos(fechaInicio, fechaFin);
         actualizarRangoFechas(fecha_inicio2, fecha_fin2)
 
     });
-    function cambiarTitulo(nuevoTitulo) {
-    graficoIngresos.options.plugins.title.text = nuevoTitulo; // Cambiar el texto del título
-    graficoIngresos.update(); // Actualizar el gráfico
-}
 function actualizarRangoFechas(fecha_inicio, fecha_fin) {
     const rangoFechas = document.getElementById('rangoFechas');
-    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
-    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+
+    function formatearFecha(fecha) {
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0'); 
+        const año = date.getFullYear();
+        return `${dia}/${mes}/${año}`;
+    }
+
+    const fechaInicioFormateada = formatearFecha(fecha_inicio);
+    const fechaFinFormateada = formatearFecha(fecha_fin);
+
     rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
     infoIngresos.style.display = 'block';
-
 }
+
 
 </script>
 

@@ -21,7 +21,7 @@
                         <a class="btn btn-light me-1" href="{{ route('indexautoruta') }}">I. Placa-Ruta</a>
                     </div>
                 </div>
-                <h4 class="card-title text-center mb-4">Ingresos por Placa</h4>
+                <h4 class="card-title text-center mb-4">INGRESOS POR PLACA</h4>
 
                 <form id="filtros-auto-form" class="row g-3">
                     <!-- Selector de Autos Múltiples -->
@@ -175,13 +175,12 @@
         backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
         fill: false
     }];
-    graficoAuto.update();  // Actualizar el gráfico para reflejar los cambios
+    graficoAuto.update(); 
     return;  // Terminar la ejecución sin continuar con más lógica
         }
 
         let todasLasFechas = [];
-        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')}
-    P(${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
+        document.getElementById('infoTotales').innerHTML = `Importe Total: S/ ${(data.total_general).toLocaleString('en-US')} - Pasajeros: ${parseInt(data.total_pasajeros).toLocaleString('en-US')})`;
         data.autos.forEach(auto => {
             todasLasFechas = [...todasLasFechas, ...auto.fechas];
         });
@@ -208,7 +207,7 @@
 
             });
             return {
-                label: `${auto.nombre} (TOTAL: S/. ${auto.total})(Turnos:${auto.total_turnos})`,
+                label: `${auto.nombre} (TOTAL: S/. ${auto.total} Turnos:${auto.total_turnos} - P= ${auto.total_pasajeros})`,
                 data: montos,
                 borderColor: getRandomColor(index),
                 backgroundColor: getRandomColor(index),
@@ -236,14 +235,15 @@
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        let label = context.dataset.label || '';
+                        let label ='Monto';
                         if (label) {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0;
+                        
                         return `${label} - Pasajeros: ${pasajeros}`;
                     },
                     title: function(context) {
@@ -466,11 +466,20 @@ function mostrarMontos(autos) {
 }
 function actualizarRangoFechas(fecha_inicio, fecha_fin) {
     const rangoFechas = document.getElementById('rangoFechas');
-    const fechaInicioFormateada = new Date(fecha_inicio).toLocaleDateString('es-PE');
-    const fechaFinFormateada = new Date(fecha_fin).toLocaleDateString('es-PE');
+
+    function formatearFecha(fecha) {
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0'); 
+        const año = date.getFullYear();
+        return `${dia}/${mes}/${año}`;
+    }
+
+    const fechaInicioFormateada = formatearFecha(fecha_inicio);
+    const fechaFinFormateada = formatearFecha(fecha_fin);
+
     rangoFechas.textContent = `${fechaInicioFormateada} - ${fechaFinFormateada}`;
     infoIngresos.style.display = 'block';
-
 }
 </script>
 @endsection
