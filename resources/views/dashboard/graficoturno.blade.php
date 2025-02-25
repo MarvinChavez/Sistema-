@@ -173,18 +173,25 @@
                     checkbox.value = turno.id;
                     checkbox.id = `turno-${turno.id}`;
                     checkbox.classList.add('form-check-input');
+
+                    // Crear la etiqueta para el checkbox
                     const label = document.createElement('label');
                     label.htmlFor = `turno-${turno.id}`;
                     label.classList.add('form-check-label');
                     label.textContent = turno.hora;
+
+                    // Agregar el checkbox y la etiqueta al contenedor
                     checkboxWrapper.appendChild(checkbox);
                     checkboxWrapper.appendChild(label);
+
+                    // Agregar el contenedor de checkbox al contenedor principal
                     turnoContainer.appendChild(checkboxWrapper);
                 });
             })
             .catch(error => console.error('Error al obtener turnos:', error));
     } else {
-        turnoContainer.innerHTML = '';
+        turnoContainer.innerHTML = ''; // Limpiar si no hay ruta o tipo de servicio
+    }
 });
 document.getElementById('servicio').addEventListener('change', function() {
     document.getElementById('rutaSelect').dispatchEvent(new Event('change')); 
@@ -255,7 +262,7 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
 
             });
             return {
-                label: `${turno.nombre} (TOTAL: S/. ${turno.total}) - P= ${turno.pasajeros})`,
+                label: `${turno.nombre} (TOTAL: S/. ${turno.total})`,
                 data: montos,
                 borderColor: generarColor(index),
                 backgroundColor: generarColor(index),
@@ -264,7 +271,7 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
                 pointHoverRadius: 6,
                 fill: false,
                 spanGaps: true,
-                pasajerosData: pasajerosData
+                pasajerosData: pasajerosData // Agregamos los datos de pasajeros para acceder en el tooltip
             };
         })
     },
@@ -283,14 +290,14 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        let label = 'Monto';
+                        let label = context.dataset.label || '';
                         if (label) {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0;
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
                         return `${label} - Pasajeros: ${pasajeros}`;
                     },
                     title: function(context) {
