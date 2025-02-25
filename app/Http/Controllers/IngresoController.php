@@ -1012,6 +1012,7 @@ public function obtenerIngresosFiltrados(Request $request)
                 'montos' => $montos,
                 'total' => number_format($totalMontos, 0, '.', ','),
                 'pasajeros' => $cantidadPasajeros,
+                'totalp' => $totalPasajerosTurno,
                 'monto_promedio' => round($montoPromedio, 2),
                 'ultimo_registro' => $ultimoRegistro
                     ? [

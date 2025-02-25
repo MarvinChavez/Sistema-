@@ -262,7 +262,7 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
 
             });
             return {
-                label: `${turno.nombre} (TOTAL: S/. ${turno.total})`,
+                label: `${turno.nombre} (TOTAL: S/. ${turno.total} - P= ${turno.totalp})`,
                 data: montos,
                 borderColor: generarColor(index),
                 backgroundColor: generarColor(index),
@@ -290,7 +290,7 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        let label = context.dataset.label || '';
+                        let label = 'Monto';
                         if (label) {
                             label += ': ';
                         }
