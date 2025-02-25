@@ -570,10 +570,6 @@ public function ingresosPorTurnoHoy(Request $request)
         ], 500);
     }
 }
-
-    
-
-    
     public function indexruta()
     {
         // Obtener todos los autos para el selector
@@ -705,12 +701,6 @@ public function ingresosPorTurnoHoy(Request $request)
         'total_pasajeros' => $totalPasajeros
     ]);
 }
-
-
-
-    
-
-
 public function filtrarRuta(Request $request)
 {
     // Validar los datos recibidos
@@ -720,15 +710,11 @@ public function filtrarRuta(Request $request)
         'fecha_inicio' => 'nullable|date',   // Fecha de inicio válida, pero puede ser nula
         'fecha_fin' => 'nullable|date',      // Fecha de fin válida, pero puede ser nula
     ]);
-
-    // Obtener los parámetros de la solicitud
     $rutaIds = $request->input('rutas');
     $servicio = $request->input('servicio');
     $fechaInicio = $request->input('fecha_inicio');
     $fechaFin = $request->input('fecha_fin');
 
-    // Consultar ingresos por ruta, servicio y fechas
-    // Se agrega la suma de pasajeros
     $query = DB::table('ingreso')
         ->select(
             'ingreso.ruta_id',
@@ -812,15 +798,9 @@ public function filtrarRuta(Request $request)
                 $ciudadFinal = $abreviaciones[$ciudad_final] ?? $ciudad_final;
                 $nombreRuta = $ciudadInicial . ' - ' . $ciudadFinal;
             }
-    
-            // Actualizar el último registro
-            $ultimoRegistro = $resultado;
+                $ultimoRegistro = $resultado;
         }
-
-        // Calcular el monto promedio (si se desea)
         $montoPromedio = count($montos) > 0 ? $totalMontos / count($montos) : 0;
-
-        // Agregar datos al array final de la ruta
         $rutas[] = [
             'nombre' => $nombreRuta ?: 'Ruta ' . $rutaId,
             'fechas' => $fechas,
@@ -836,23 +816,17 @@ public function filtrarRuta(Request $request)
             'total' => number_format($totalMontos, 0, '.', ','),
             'total_pasajeros' => $totalPasajerosRuta
         ];
-
         $totalGeneral += $totalMontos;
         $totalGeneralPasajeros += $totalPasajerosRuta;
     }
-
-    // Devolver la respuesta en formato JSON
     return response()->json([
         'rutas' => $rutas,
         'total_general' => number_format($totalGeneral, 0, '.', ','),
         'total_pasajeros' => $totalGeneralPasajeros
     ]);
 }
-
-
     public function indexautopie()
     {
-        // Obtener todos los autos para el selector
         $autos = Auto::all();
 
         return view('dashboard.graficoautopie', compact('autos'));
@@ -862,21 +836,15 @@ public function filtrarRuta(Request $request)
     $autosIds = $request->input('autos');
     $fechaInicio = $request->input('fecha_inicio');
     $fechaFin = $request->input('fecha_fin');
-
-    // Obtener los ingresos y la cantidad de pasajeros por auto
     $resultados = Ingreso::whereIn('auto_id', $autosIds)
         ->whereBetween('fecha', [$fechaInicio, $fechaFin])
         ->groupBy('auto_id')
         ->selectRaw('auto_id, SUM(monto) as total_monto, SUM(pasajero) as total_pasajeros')
         ->get();
-
-    // Calcular el total general de los ingresos y pasajeros de los autos seleccionados
     $totalGeneral = $resultados->sum('total_monto');
     $totalPasajeros = $resultados->sum('total_pasajeros');
-
-    // Mapear los resultados a un formato adecuado y calcular el porcentaje
     $data = $resultados->map(function($resultado) use ($totalGeneral, $totalPasajeros) {
-        $porcentaje = $totalGeneral > 0 ? ($resultado->total_monto / $totalGeneral) * 100 : 0; // Evitar división por cero
+        $porcentaje = $totalGeneral > 0 ? ($resultado->total_monto / $totalGeneral) * 100 : 0; 
         return [
             'placa' => $resultado->auto->placa,
             'total_monto' => $resultado->total_monto,
@@ -893,7 +861,6 @@ public function filtrarRuta(Request $request)
 
 public function indexrutapie()
 {
-    // Obtener todos los autos para el selector
     $rutas = Ruta::all();
 
     return view('dashboard.graficorutapie', compact('rutas'));
@@ -903,15 +870,12 @@ public function ingresosPorRutas(Request $request)
     $rutasIds = $request->input('rutas');
     $fechaInicio = $request->input('fecha_inicio');
     $fechaFin = $request->input('fecha_fin');
-
-    // Filtrar por ruta y rango de fechas
     $resultados = Ingreso::whereIn('ruta_id', $rutasIds)
         ->whereBetween('fecha', [$fechaInicio, $fechaFin])
         ->groupBy('ruta_id')
         ->selectRaw('ruta_id, SUM(monto) as total_monto, SUM(pasajero) as total_pasajeros')
         ->get();
 
-    // Calcular el total general de los ingresos y pasajeros de las rutas seleccionadas
     $totalGeneral = $resultados->sum('total_monto');
     $totalPasajerosGeneral = $resultados->sum('total_pasajeros');
     $abreviaciones = [
@@ -923,7 +887,6 @@ public function ingresosPorRutas(Request $request)
         'LAVICTORIA' => 'LIMA',
         'MORALES' => 'TARA'
     ];
-    // Mapear los resultados a un formato adecuado y calcular el porcentaje
     $data = $resultados->map(function($resultado) use ($totalGeneral, $totalPasajerosGeneral) {
         $porcentaje = $totalGeneral > 0 ? ($resultado->total_monto / $totalGeneral) * 100 : 0; // Evitar división por cero
         $ciudadInicial = strtoupper(trim($resultado->ruta->ciudad_inicial));
@@ -935,10 +898,10 @@ public function ingresosPorRutas(Request $request)
             'rutainicial' => $rutainicial,
             'rutafinal' => $rutafinal,
             'total_monto' => $resultado->total_monto,
-            'total_pasajeros' => $resultado->total_pasajeros, // Nuevo campo agregado
-            'porcentaje' => number_format($porcentaje, 2), // Formato a dos decimales
+            'total_pasajeros' => $resultado->total_pasajeros, 
+            'porcentaje' => number_format($porcentaje, 2), 
             'total_general' => number_format($totalGeneral, 2),
-            'total_pasajeros_general' => $totalPasajerosGeneral // Nuevo total agregado
+            'total_pasajeros_general' => $totalPasajerosGeneral 
         ];
     });
 
@@ -946,7 +909,6 @@ public function ingresosPorRutas(Request $request)
 }
     public function indexturno()
     {
-    // Obtener todos los autos para el selector
     $rutas = Ruta::all();
 
     return view('dashboard.graficoturno', compact('rutas'));
@@ -954,56 +916,37 @@ public function ingresosPorRutas(Request $request)
 
     public function obtenerTurnosPorRuta(Request $request, $rutaId)
 {
-    // Obtener el tipo de servicio desde los parámetros de la solicitud
     $tipoServicio = $request->input('servicio');
-
-    // Construir la consulta de turnos
     $query = Ingreso::where('ruta_id', $rutaId);
-
-    // Si el tipo de servicio no es "Total" (ni vacío), aplicar el filtro
     if ($tipoServicio !== "Total") {
         $query->where('servicio', $tipoServicio);
     }
-
-    // Obtener los turnos únicos
     $turnos = $query->distinct()->pluck('turno_id');
-
-    // Si no hay turnos, devolver un mensaje vacío
     if ($turnos->isEmpty()) {
-        return response()->json([]); // Retorna un arreglo vacío en lugar de un mensaje de error
+        return response()->json([]);
     }
-
-    // Obtener los detalles de los turnos y ordenarlos por hora de inicio
     $turnosDetalles = Turno::whereIn('id', $turnos)
-        ->orderBy('hora') // Asegúrate de usar el nombre correcto de la columna
+        ->orderBy('hora') 
         ->get();
 
     return response()->json($turnosDetalles);
 }
-
-
-
-
 public function obtenerIngresosFiltrados(Request $request)
 {
     try {
         // Validar los datos recibidos
         $request->validate([
-            'turnos' => 'required|array',       // Los turnos seleccionados deben ser un array
-            'ruta' => 'required|integer',      // La ruta debe ser un entero
-            'servicio' => 'required|string',   // El servicio debe ser un string
-            'fecha_inicio' => 'nullable|date', // Fecha de inicio válida, puede ser nula
-            'fecha_fin' => 'nullable|date',    // Fecha de fin válida, puede ser nula
+            'turnos' => 'required|array',      
+            'ruta' => 'required|integer',     
+            'servicio' => 'required|string',   
+            'fecha_inicio' => 'nullable|date', 
+            'fecha_fin' => 'nullable|date',   
         ]);
-
-        // Obtener los parámetros de la solicitud
         $turnoIds = $request->input('turnos');
         $ruta = $request->input('ruta');
         $servicio = $request->input('servicio');
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
-
-        // Consultar los turnos filtrados por los parámetros recibidos
         $query = DB::table('ingreso')
             ->select(
                 'ingreso.turno_id',
@@ -1015,7 +958,6 @@ public function obtenerIngresosFiltrados(Request $request)
             ->join('turno', 'ingreso.turno_id', '=', 'turno.id')
             ->whereIn('ingreso.turno_id', $turnoIds)
             ->where('ingreso.ruta_id', $ruta)
-            // Si el servicio no es 'Total', aplicar el filtro de servicio
             ->when($servicio !== 'Total', function ($query) use ($servicio) {
                 return $query->where('ingreso.servicio', $servicio);
             })
@@ -1031,8 +973,6 @@ public function obtenerIngresosFiltrados(Request $request)
             ->groupBy('ingreso.turno_id', 'turno.hora', 'fecha')
             ->orderBy('fecha')
             ->get();
-
-        // Si no hay resultados, devolver una respuesta vacía
         if ($query->isEmpty()) {
             return response()->json([
                 'turnos' => [],
@@ -1040,8 +980,6 @@ public function obtenerIngresosFiltrados(Request $request)
                 'total_pasajeros' => 0,
             ]);
         }
-
-        // Preparar la lista de turnos con sus datos
         $turnos = [];
         $totalGeneral = 0;
         $totalPasajeros = 0;
@@ -1050,7 +988,6 @@ public function obtenerIngresosFiltrados(Request $request)
             $datosTurno = $query->filter(function ($resultado) use ($turnoId) {
                 return $resultado->turno_id == $turnoId;
             });
-
             $fechas = [];
             $montos = [];
             $cantidadPasajeros = [];
@@ -1068,11 +1005,7 @@ public function obtenerIngresosFiltrados(Request $request)
                 $nombreTurno = $resultado->hora;
                 $ultimoRegistro = $resultado;
             }
-
-            // Calcular el monto promedio
             $montoPromedio = count($montos) > 0 ? $totalMontos / count($montos) : 0;
-
-            // Agregar los datos al array de turnos
             $turnos[] = [
                 'nombre' => $nombreTurno ?: 'Turno ' . $turnoId,
                 'fechas' => $fechas,
@@ -1090,8 +1023,6 @@ public function obtenerIngresosFiltrados(Request $request)
             $totalGeneral += $totalMontos;
             $totalPasajeros += $totalPasajerosTurno;
         }
-
-        // Devolver la respuesta en formato JSON
         return response()->json([
             'turnos' => $turnos,
             'total_general' => number_format($totalGeneral, 0, '.', ','),

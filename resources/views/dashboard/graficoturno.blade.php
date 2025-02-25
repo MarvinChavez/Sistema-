@@ -173,25 +173,18 @@
                     checkbox.value = turno.id;
                     checkbox.id = `turno-${turno.id}`;
                     checkbox.classList.add('form-check-input');
-
-                    // Crear la etiqueta para el checkbox
                     const label = document.createElement('label');
                     label.htmlFor = `turno-${turno.id}`;
                     label.classList.add('form-check-label');
                     label.textContent = turno.hora;
-
-                    // Agregar el checkbox y la etiqueta al contenedor
                     checkboxWrapper.appendChild(checkbox);
                     checkboxWrapper.appendChild(label);
-
-                    // Agregar el contenedor de checkbox al contenedor principal
                     turnoContainer.appendChild(checkboxWrapper);
                 });
             })
             .catch(error => console.error('Error al obtener turnos:', error));
     } else {
-        turnoContainer.innerHTML = ''; // Limpiar si no hay ruta o tipo de servicio
-    }
+        turnoContainer.innerHTML = '';
 });
 document.getElementById('servicio').addEventListener('change', function() {
     document.getElementById('rutaSelect').dispatchEvent(new Event('change')); 
@@ -222,14 +215,14 @@ document.getElementById('servicio').addEventListener('change', function() {
         console.log('Datos recibidos:', data);
 if (!data.turnos || data.turnos.length === 0) {
     graficoTurno.data.labels = [];  
-    graficoTurno.data.datasets = [{  // Vaciar los datasets
+    graficoTurno.data.datasets = [{  
         label: 'No hay datos disponibles',
         data: [],
-        borderColor: 'rgba(0,0,0,0)',  // Hacer la línea invisible
-        backgroundColor: 'rgba(0,0,0,0)', // Sin fondo
+        borderColor: 'rgba(0,0,0,0)',  
+        backgroundColor: 'rgba(0,0,0,0)', 
         fill: false
     }];
-    graficoTurno.update();  // Actualizar el gráfico para reflejar los cambios
+    graficoTurno.update(); 
     return;  
 }
 
@@ -262,7 +255,7 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
 
             });
             return {
-                label: `${turno.nombre} (TOTAL: S/. ${turno.total})`,
+                label: `${turno.nombre} (TOTAL: S/. ${turno.total}) - P= ${turno.pasajeros})`,
                 data: montos,
                 borderColor: generarColor(index),
                 backgroundColor: generarColor(index),
