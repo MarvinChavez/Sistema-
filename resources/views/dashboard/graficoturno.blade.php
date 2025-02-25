@@ -264,7 +264,7 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
                 pointHoverRadius: 6,
                 fill: false,
                 spanGaps: true,
-                pasajerosData: pasajerosData // Agregamos los datos de pasajeros para acceder en el tooltip
+                pasajerosData: pasajerosData
             };
         })
     },
@@ -283,14 +283,14 @@ todasLasFechas = [...new Set(todasLasFechas)].sort();
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        let label = context.dataset.label || '';
+                        let label = 'Monto';
                         if (label) {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
                             label += new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(context.parsed.y);
                         }
-                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0; // Obtener pasajeros de la fecha específica
+                        let pasajeros = context.dataset.pasajerosData[context.dataIndex] ?? 0;
                         return `${label} - Pasajeros: ${pasajeros}`;
                     },
                     title: function(context) {
